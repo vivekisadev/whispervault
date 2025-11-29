@@ -8,12 +8,6 @@ import { generateId } from '@/lib/utils';
 const chatRooms = new Map<string, ChatRoom>();
 const userRooms = new Map<string, string>();
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
 export async function GET(req: NextRequest) {
     const res = (req as any).res;
 
