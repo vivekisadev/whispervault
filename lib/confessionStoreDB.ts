@@ -1,41 +1,55 @@
 import { Confession, Reply } from '@/types';
 import { generateId } from './utils';
-import { connectDB } from './db/mongodb';
-import { ConfessionModel } from './models/Confession';
+import { prisma } from './db/prisma';
 import { cacheGet, cacheSet, cacheDel } from './db/redis';
 
 /**
- * MongoDB-backed confession store with Redis caching
- * This replaces the old JSON file-based storage
+ * Prisma/PostgreSQL-backed confession store with Redis caching
  */
 class ConfessionStoreDB {
-    private initialized = false;
 
-    private async ensureConnection() {
-        if (!this.initialized) {
-            await connectDB();
-            this.initialized = true;
-        }
+    // Helper to map DB result to App type
+    private mapConfession(c: any): Confession {
+        return {
+            id: c.id,
+            content: c.content,
+            timestamp: c.timestamp.getTime(),
+            upvotes: c.upvotes,
+            downvotes: c.downvotes,
+            replies: c.replies ? c.replies.map(this.mapReply) : [],
+            tags: c.tags,
+            isReported: c.isReported,
+            reportCount: c.reportCount,
+            ip: c.ip || undefined,
+        };
+    }
+
+    private mapReply(r: any): Reply {
+        return {
+            id: r.id,
+            confessionId: r.confessionId,
+            content: r.content,
+            timestamp: r.timestamp.getTime(),
+            upvotes: r.upvotes,
+            downvotes: r.downvotes,
+        };
     }
 
     // ---------------------------------------------------------------------
     // Retrieval methods with caching
     // ---------------------------------------------------------------------
     async getAllConfessions(): Promise<Confession[]> {
-        await this.ensureConnection();
-
         // Fetch all confessions directly from DB without caching
-        const confessions = await ConfessionModel.find({ isReported: { $ne: true } })
-            .sort({ timestamp: -1 })
-            .lean()
-            .exec();
+        const confessions = await prisma.confession.findMany({
+            where: { isReported: false },
+            orderBy: { timestamp: 'desc' },
+            include: { replies: true },
+        });
 
-        return confessions as Confession[];
+        return confessions.map(c => this.mapConfession(c));
     }
 
     async getConfession(id: string): Promise<Confession | null> {
-        await this.ensureConnection();
-
         // Try cache first
         const cacheKey = `confession:${id}`;
         const cached = await cacheGet<Confession>(cacheKey);
@@ -44,166 +58,160 @@ class ConfessionStoreDB {
         }
 
         // Fetch from DB
-        const confession = await ConfessionModel.findOne({ id }).lean().exec();
+        const confession = await prisma.confession.findUnique({
+            where: { id },
+            include: { replies: true },
+        });
 
         if (confession) {
+            const mapped = this.mapConfession(confession);
             // Cache for 5 minutes
-            await cacheSet(cacheKey, confession, 300);
+            await cacheSet(cacheKey, mapped, 300);
+            return mapped;
         }
 
-        return confession as Confession | null;
+        return null;
     }
 
     // ---------------------------------------------------------------------
     // Creation / mutation methods
     // ---------------------------------------------------------------------
     async createConfession(content: string, tags?: string[], ip?: string): Promise<Confession> {
-        await this.ensureConnection();
-
-        const confession: Confession = {
-            id: generateId(),
-            content,
-            timestamp: Date.now(),
-            upvotes: 0,
-            downvotes: 0,
-            replies: [],
-            tags,
-            isReported: false,
-            reportCount: 0,
-            ip,
-        };
-
-        await ConfessionModel.create(confession);
+        const confession = await prisma.confession.create({
+            data: {
+                content,
+                tags: tags || [],
+                ip,
+                timestamp: new Date(),
+            },
+            include: { replies: true },
+        });
 
         // Invalidate cache
         await cacheDel('confessions:all');
         await cacheDel('confessions:trending');
 
-        return confession;
+        return this.mapConfession(confession);
     }
 
     async addReply(confessionId: string, content: string): Promise<Reply | null> {
-        await this.ensureConnection();
+        try {
+            const reply = await prisma.reply.create({
+                data: {
+                    confessionId,
+                    content,
+                    timestamp: new Date(),
+                },
+            });
 
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return null;
+            // Invalidate cache
+            await cacheDel(`confession:${confessionId}`);
+            await cacheDel('confessions:all');
 
-        const reply: Reply = {
-            id: generateId(),
-            confessionId,
-            content,
-            timestamp: Date.now(),
-            upvotes: 0,
-            downvotes: 0,
-        };
-
-        confession.replies.push(reply);
-        await confession.save();
-
-        // Invalidate cache
-        await cacheDel(`confession:${confessionId}`);
-        await cacheDel('confessions:all');
-
-        return reply;
+            return this.mapReply(reply);
+        } catch (e) {
+            return null;
+        }
     }
 
     async voteConfession(confessionId: string, voteType: 'upvote' | 'downvote'): Promise<boolean> {
-        await this.ensureConnection();
+        try {
+            await prisma.confession.update({
+                where: { id: confessionId },
+                data: {
+                    [voteType === 'upvote' ? 'upvotes' : 'downvotes']: {
+                        increment: 1,
+                    },
+                },
+            });
 
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return false;
+            // Invalidate cache
+            await cacheDel(`confession:${confessionId}`);
+            await cacheDel('confessions:all');
+            await cacheDel('confessions:trending');
 
-        if (voteType === 'upvote') {
-            confession.upvotes++;
-        } else {
-            confession.downvotes++;
+            return true;
+        } catch (e) {
+            return false;
         }
-
-        await confession.save();
-
-        // Invalidate cache
-        await cacheDel(`confession:${confessionId}`);
-        await cacheDel('confessions:all');
-        await cacheDel('confessions:trending');
-
-        return true;
     }
 
     async voteReply(confessionId: string, replyId: string, voteType: 'upvote' | 'downvote'): Promise<boolean> {
-        await this.ensureConnection();
+        try {
+            await prisma.reply.update({
+                where: { id: replyId },
+                data: {
+                    [voteType === 'upvote' ? 'upvotes' : 'downvotes']: {
+                        increment: 1,
+                    },
+                },
+            });
 
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return false;
+            // Invalidate cache
+            await cacheDel(`confession:${confessionId}`);
+            await cacheDel('confessions:all');
 
-        const reply = confession.replies.find((r) => r.id === replyId);
-        if (!reply) return false;
-
-        if (voteType === 'upvote') {
-            reply.upvotes++;
-        } else {
-            reply.downvotes++;
+            return true;
+        } catch (e) {
+            return false;
         }
-
-        await confession.save();
-
-        // Invalidate cache
-        await cacheDel(`confession:${confessionId}`);
-        await cacheDel('confessions:all');
-
-        return true;
     }
 
     async removeVoteConfession(confessionId: string, voteType: 'upvote' | 'downvote'): Promise<boolean> {
-        await this.ensureConnection();
+        try {
+            // We need to check if value > 0 first, but atomic decrement is safer. 
+            // Prisma doesn't support 'decrement if > 0' natively in one query easily without raw SQL or check.
+            // For simplicity, we'll just decrement. If it goes below 0, we can fix it or ignore.
+            // Better: fetch first.
+            const c = await prisma.confession.findUnique({ where: { id: confessionId }, select: { upvotes: true, downvotes: true } });
+            if (!c) return false;
 
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return false;
+            if (voteType === 'upvote' && c.upvotes > 0) {
+                await prisma.confession.update({ where: { id: confessionId }, data: { upvotes: { decrement: 1 } } });
+            } else if (voteType === 'downvote' && c.downvotes > 0) {
+                await prisma.confession.update({ where: { id: confessionId }, data: { downvotes: { decrement: 1 } } });
+            }
 
-        if (voteType === 'upvote' && confession.upvotes > 0) {
-            confession.upvotes--;
-        } else if (voteType === 'downvote' && confession.downvotes > 0) {
-            confession.downvotes--;
+            // Invalidate cache
+            await cacheDel(`confession:${confessionId}`);
+            await cacheDel('confessions:all');
+            await cacheDel('confessions:trending');
+
+            return true;
+        } catch (e) {
+            return false;
         }
-
-        await confession.save();
-
-        // Invalidate cache
-        await cacheDel(`confession:${confessionId}`);
-        await cacheDel('confessions:all');
-        await cacheDel('confessions:trending');
-
-        return true;
     }
 
     // ---------------------------------------------------------------------
     // Reporting & moderation
     // ---------------------------------------------------------------------
     async reportConfession(confessionId: string): Promise<boolean> {
-        await this.ensureConnection();
+        try {
+            const c = await prisma.confession.update({
+                where: { id: confessionId },
+                data: {
+                    isReported: true,
+                    reportCount: { increment: 1 },
+                },
+            });
 
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return false;
+            // Auto-delete if reported 5+ times
+            if (c.reportCount >= 5) {
+                await prisma.confession.delete({ where: { id: confessionId } });
+            }
 
-        confession.isReported = true;
-        confession.reportCount = (confession.reportCount || 0) + 1;
+            // Invalidate cache
+            await cacheDel(`confession:${confessionId}`);
+            await cacheDel('confessions:all');
 
-        // Auto-delete if reported 5+ times
-        if (confession.reportCount >= 5) {
-            await ConfessionModel.deleteOne({ id: confessionId });
-        } else {
-            await confession.save();
+            return true;
+        } catch (e) {
+            return false;
         }
-
-        // Invalidate cache
-        await cacheDel(`confession:${confessionId}`);
-        await cacheDel('confessions:all');
-
-        return true;
     }
 
     async getTrendingConfessions(limit: number = 10): Promise<Confession[]> {
-        await this.ensureConnection();
-
         // Try cache first
         const cacheKey = `confessions:trending:${limit}`;
         const cached = await cacheGet<Confession[]>(cacheKey);
@@ -212,98 +220,123 @@ class ConfessionStoreDB {
         }
 
         // Fetch from DB
-        const confessions = await ConfessionModel.find({ isReported: { $ne: true } })
-            .sort({ upvotes: -1, downvotes: 1, timestamp: -1 })
-            .limit(limit)
-            .lean()
-            .exec();
+        const confessions = await prisma.confession.findMany({
+            where: { isReported: false },
+            orderBy: [
+                { upvotes: 'desc' },
+                { downvotes: 'asc' },
+                { timestamp: 'desc' },
+            ],
+            take: limit,
+            include: { replies: true },
+        });
+
+        const mapped = confessions.map(c => this.mapConfession(c));
 
         // Cache for 2 minutes
-        await cacheSet(cacheKey, confessions, 120);
+        await cacheSet(cacheKey, mapped, 120);
 
-        return confessions as Confession[];
+        return mapped;
     }
 
     async searchConfessions(query: string): Promise<Confession[]> {
-        await this.ensureConnection();
+        const confessions = await prisma.confession.findMany({
+            where: {
+                isReported: false,
+                OR: [
+                    { content: { contains: query, mode: 'insensitive' } },
+                    { tags: { has: query } }, // Exact match for tags in array
+                    // For partial tag match, we might need raw query or just rely on content.
+                    // Prisma 'has' is for exact element match in array.
+                ],
+            },
+            orderBy: { timestamp: 'desc' },
+            include: { replies: true },
+        });
 
-        const lower = query.toLowerCase();
-        const confessions = await ConfessionModel.find({
-            $or: [
-                { content: { $regex: lower, $options: 'i' } },
-                { tags: { $regex: lower, $options: 'i' } },
-            ],
-            isReported: { $ne: true },
-        })
-            .sort({ timestamp: -1 })
-            .lean()
-            .exec();
-
-        return confessions as Confession[];
+        return confessions.map(c => this.mapConfession(c));
     }
 
     // ---------------------------------------------------------------------
     // Admin utilities
     // ---------------------------------------------------------------------
     async deleteConfession(id: string): Promise<boolean> {
-        await this.ensureConnection();
+        try {
+            await prisma.confession.delete({ where: { id } });
 
-        const result = await ConfessionModel.deleteOne({ id });
+            // Invalidate cache
+            await cacheDel(`confession:${id}`);
+            await cacheDel('confessions:all');
+            await cacheDel('confessions:trending');
 
-        // Invalidate cache
-        await cacheDel(`confession:${id}`);
-        await cacheDel('confessions:all');
-        await cacheDel('confessions:trending');
-
-        return result.deletedCount > 0;
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     async deleteReply(confessionId: string, replyId: string): Promise<boolean> {
-        await this.ensureConnection();
-
-        const confession = await ConfessionModel.findOne({ id: confessionId });
-        if (!confession) return false;
-
-        const initialLength = confession.replies.length;
-        confession.replies = confession.replies.filter((r) => r.id !== replyId);
-
-        if (confession.replies.length < initialLength) {
-            await confession.save();
+        try {
+            await prisma.reply.delete({ where: { id: replyId } });
 
             // Invalidate cache
             await cacheDel(`confession:${confessionId}`);
             await cacheDel('confessions:all');
 
             return true;
+        } catch (e) {
+            return false;
         }
-
-        return false;
     }
 
     async getReportedConfessions(): Promise<Confession[]> {
-        await this.ensureConnection();
+        const confessions = await prisma.confession.findMany({
+            where: {
+                OR: [
+                    { isReported: true },
+                    { reportCount: { gt: 0 } },
+                ],
+            },
+            orderBy: { reportCount: 'desc' },
+            include: { replies: true },
+        });
 
-        const confessions = await ConfessionModel.find({
-            $or: [{ isReported: true }, { reportCount: { $gt: 0 } }],
-        })
-            .sort({ reportCount: -1 })
-            .lean()
-            .exec();
-
-        return confessions as Confession[];
+        return confessions.map(c => this.mapConfession(c));
     }
 
     // ---------------------------------------------------------------------
     // Migration helper
     // ---------------------------------------------------------------------
     async seedFromJSON(confessions: Confession[]): Promise<void> {
-        await this.ensureConnection();
-
         // Only seed if database is empty
-        const count = await ConfessionModel.countDocuments();
+        const count = await prisma.confession.count();
         if (count === 0 && confessions.length > 0) {
             console.log(`🌱 Seeding ${confessions.length} confessions from JSON...`);
-            await ConfessionModel.insertMany(confessions);
+
+            for (const c of confessions) {
+                await prisma.confession.create({
+                    data: {
+                        id: c.id,
+                        content: c.content,
+                        timestamp: new Date(c.timestamp),
+                        upvotes: c.upvotes,
+                        downvotes: c.downvotes,
+                        tags: c.tags || [],
+                        isReported: c.isReported || false,
+                        reportCount: c.reportCount || 0,
+                        ip: c.ip,
+                        replies: {
+                            create: c.replies.map(r => ({
+                                id: r.id,
+                                content: r.content,
+                                timestamp: new Date(r.timestamp),
+                                upvotes: r.upvotes,
+                                downvotes: r.downvotes,
+                            })),
+                        },
+                    },
+                });
+            }
             console.log('✅ Seeding complete');
         }
     }

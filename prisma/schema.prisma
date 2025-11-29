@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Confession {
+  id          String   @id @default(cuid())
+  content     String
+  timestamp   DateTime @default(now())
+  upvotes     Int      @default(0)
+  downvotes   Int      @default(0)
+  tags        String[]
+  isReported  Boolean  @default(false)
+  reportCount Int      @default(0)
+  ip          String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  replies     Reply[]
+
+  @@index([timestamp(sort: Desc)])
+  @@index([upvotes(sort: Desc), downvotes(sort: Asc)])
+  @@index([isReported, reportCount(sort: Desc)])
+}
+
+model Reply {
+  id           String     @id @default(cuid())
+  content      String
+  timestamp    DateTime   @default(now())
+  upvotes      Int        @default(0)
+  downvotes    Int        @default(0)
+  
+  confessionId String
+  confession   Confession @relation(fields: [confessionId], references: [id], onDelete: Cascade)
+}
