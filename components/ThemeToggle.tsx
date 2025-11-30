@@ -295,50 +295,69 @@ const createAnimation = (
   }
 
   if (variant === "circle-blur") {
+    // Helper for clip-path positions
+    const getClipPathPosition = (position: AnimationStart) => {
+      switch (position) {
+        case "top-left": return "0% 0%";
+        case "top-right": return "100% 0%";
+        case "bottom-left": return "0% 100%";
+        case "bottom-right": return "100% 100%";
+        case "top-center": return "50% 0%";
+        case "bottom-center": return "50% 100%";
+        case "center": return "50% 50%";
+        default: return "50% 50%";
+      }
+    };
+
+    const clipPos = getClipPathPosition(start);
+
     if (start === "center") {
       return {
         name: `${variant}-${start}`,
         css: `
-        /* Mobile - Fast & No Blur */
+        /* Mobile - Fast & Clip Path (Performance Optimized) */
         ::view-transition-group(root) {
-          animation-duration: 0.5s;
-          animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+          animation-duration: 0.4s;
+          animation-timing-function: ease-out;
         }
 
         ::view-transition-new(root) {
-          mask: url('${svg}') center / 0 no-repeat;
-          mask-origin: content-box;
-          animation: scale 0.5s forwards;
-          transform-origin: center;
-          will-change: mask-size;
+          animation: reveal-mobile-center 0.4s forwards;
         }
 
         ::view-transition-old(root),
         .dark::view-transition-old(root) {
           animation: none;
-          transform-origin: center;
           z-index: -1;
         }
 
-        @keyframes scale {
-          to {
-            mask-size: 350vmax;
-          }
+        @keyframes reveal-mobile-center {
+          from { clip-path: circle(0% at 50% 50%); }
+          to { clip-path: circle(150% at 50% 50%); }
         }
 
-        /* Desktop - Slower & With Blur */
+        /* Desktop - Slower & With Blur & Mask (Premium Feel) */
         @media (min-width: 768px) {
           ::view-transition-group(root) {
             animation-duration: 1s;
+            animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
           }
 
           ::view-transition-new(root) {
+            mask: url('${svg}') center / 0 no-repeat;
+            mask-origin: content-box;
             animation: scale-desktop 1s forwards;
             filter: blur(2px);
+            clip-path: none;
+          }
+
+          ::view-transition-old(root),
+          .dark::view-transition-old(root) {
+            transform-origin: center;
           }
 
           @keyframes scale-desktop {
-            from { filter: blur(8px); }
+            from { filter: blur(8px); mask-size: 0; }
             50% { filter: blur(4px); }
             to { mask-size: 350vmax; filter: none; }
           }
@@ -350,46 +369,53 @@ const createAnimation = (
     return {
       name: `${variant}-${start}${blur ? "-blur" : ""}`,
       css: `
-      /* Mobile - Fast & No Blur */
+      /* Mobile - Fast & Clip Path (Performance Optimized) */
       ::view-transition-group(root) {
-        animation-duration: 0.5s;
-        animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+        animation-duration: 0.4s;
+        animation-timing-function: ease-out;
       }
 
       ::view-transition-new(root) {
-        mask: url('${svg}') ${start.replace("-", " ")} / 0 no-repeat;
-        mask-origin: content-box;
-        animation: scale-${start}${blur ? "-blur" : ""} 0.5s forwards;
-        transform-origin: ${transformOrigin};
-        will-change: mask-size;
+        animation: reveal-mobile-${start} 0.4s forwards;
       }
 
       ::view-transition-old(root),
       .dark::view-transition-old(root) {
         animation: none;
-        transform-origin: ${transformOrigin};
         z-index: -1;
       }
 
-      @keyframes scale-${start}${blur ? "-blur" : ""} {
-        to {
-          mask-size: 2000vmax;
-        }
+      @keyframes reveal-mobile-${start} {
+        from { clip-path: circle(0% at ${clipPos}); }
+        to { clip-path: circle(150% at ${clipPos}); }
       }
 
-      /* Desktop - Slower & With Blur (if enabled) */
+      /* Desktop - Slower & With Blur & Mask */
       @media (min-width: 768px) {
         ::view-transition-group(root) {
           animation-duration: 1s;
+          animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         ::view-transition-new(root) {
+          mask: url('${svg}') ${start.replace("-", " ")} / 0 no-repeat;
+          mask-origin: content-box;
           animation: scale-${start}${blur ? "-blur" : ""}-desktop 1s forwards;
           ${blur ? "filter: blur(2px);" : ""}
+          transform-origin: ${transformOrigin};
+          will-change: mask-size;
+          clip-path: none;
+        }
+
+        ::view-transition-old(root),
+        .dark::view-transition-old(root) {
+          animation: none;
+          transform-origin: ${transformOrigin};
         }
 
         @keyframes scale-${start}${blur ? "-blur" : ""}-desktop {
           from {
+            mask-size: 0;
             ${blur ? "filter: blur(8px);" : ""}
           }
           ${blur ? "50% { filter: blur(4px); }" : ""}
