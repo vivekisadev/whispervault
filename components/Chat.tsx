@@ -40,10 +40,7 @@ export default function Chat() {
             return;
         }
 
-        const newSocket = io(socketUrl, {
-            path: '/api/socket',
-            addTrailingSlash: false,
-        });
+        const newSocket = io(socketUrl);
 
         newSocket.on('connect', () => {
             console.log('Connected to chat');

@@ -16,7 +16,6 @@ app.use(cors({
 }));
 
 const io = new Server(httpServer, {
-    path: '/api/socket',
     cors: {
         origin: process.env.FRONTEND_URL || '*',
         methods: ['GET', 'POST'],

@@ -49,10 +49,7 @@ export default function Home() {
     // Connect to Socket.IO server (separate server in production)
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || '';
     if (socketUrl) {
-      const socket = io(socketUrl, {
-        path: '/api/socket',
-        addTrailingSlash: false,
-      });
+      const socket = io(socketUrl);
 
       socket.on('online-users', (count: number) => {
         setOnlineUsers(count);
