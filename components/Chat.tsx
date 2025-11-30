@@ -290,33 +290,35 @@ export default function Chat() {
                                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} animate-fade-in`}
                             >
                                 <div
-                                    className={`max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${isOwnMessage
-                                        ? 'bg-gradient-to-r from-primary/90 to-pink-500/90 backdrop-blur-md border border-white/20 text-primary-foreground'
-                                        : 'bg-secondary/60 backdrop-blur-md border border-border/50 text-secondary-foreground'
+                                    className={`max-w-[70%] px-4 py-2 glass-message ${isOwnMessage
+                                        ? 'text-foreground'
+                                        : 'text-foreground'
                                         }`}
                                 >
-                                    {message.image && (
-                                        <div
-                                            className="relative mb-2 rounded-lg overflow-hidden group cursor-zoom-in"
-                                            onClick={() => setViewingImage(message.image!)}
-                                        >
-                                            {/* Transparent overlay to prevent drag/save but allow click */}
+                                    <div className="relative z-10">
+                                        {message.image && (
                                             <div
-                                                className="absolute inset-0 z-10 bg-transparent"
-                                                onContextMenu={(e) => e.preventDefault()}
-                                            />
-                                            <img
-                                                src={message.image}
-                                                alt="Shared image"
-                                                className="max-w-full max-h-48 object-cover rounded-lg select-none pointer-events-none"
-                                                draggable={false}
-                                            />
-                                        </div>
-                                    )}
-                                    {message.content && <p className="text-sm mb-1">{message.content}</p>}
-                                    <p className="text-xs opacity-70">
-                                        {formatTimestamp(message.timestamp)}
-                                    </p>
+                                                className="relative mb-2 rounded-lg overflow-hidden group cursor-zoom-in"
+                                                onClick={() => setViewingImage(message.image!)}
+                                            >
+                                                {/* Transparent overlay to prevent drag/save but allow click */}
+                                                <div
+                                                    className="absolute inset-0 z-10 bg-transparent"
+                                                    onContextMenu={(e) => e.preventDefault()}
+                                                />
+                                                <img
+                                                    src={message.image}
+                                                    alt="Shared image"
+                                                    className="max-w-full max-h-48 object-cover rounded-lg select-none pointer-events-none"
+                                                    draggable={false}
+                                                />
+                                            </div>
+                                        )}
+                                        {message.content && <p className="text-sm mb-1">{message.content}</p>}
+                                        <p className="text-xs opacity-70">
+                                            {formatTimestamp(message.timestamp)}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -330,6 +332,7 @@ export default function Chat() {
                                     <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
                                     <span className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></span>
                                 </div>
+                                <span className="text-xs text-muted-foreground ml-2 self-center animate-pulse">Stranger is typing...</span>
                             </div>
                         </div>
                     )}

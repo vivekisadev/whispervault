@@ -122,3 +122,45 @@
     }
   }
 }
+
+/* Glassmorphism Message Style */
+.glass-message {
+  backdrop-filter: blur(50px) saturate(100%);
+  -webkit-backdrop-filter: blur(50px) saturate(100%);
+  background: rgba(253, 244, 227, 0);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 4px 4px 20px 0 rgba(120, 53, 15, 0.1),
+    inset 0 0 150px rgba(245, 158, 11, 0.05),
+    inset 0px 0px 4px 2px rgba(255, 255, 255, 0.15);
+  position: relative;
+  overflow: hidden;
+  /* Ensure pseudo-elements stay inside */
+}
+
+/* Reflection overlay for realism using pseudo-elements */
+.glass-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(to left top, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 50%);
+  z-index: 1;
+}
+
+.glass-message::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 1;
+}

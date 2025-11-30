@@ -635,19 +635,18 @@ const useThemeToggle = ({
     // Optimistically update state
     setIsDark(!isDark);
 
-    const animation = createAnimation(variant, start, blur, gifUrl);
-    updateStyles(animation.css, animation.name);
+    // Check for mobile or reduced motion preferences
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const shouldReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (typeof window === "undefined") return;
-
-    const switchTheme = () => {
+    // If mobile or reduced motion, skip the heavy View Transition
+    if (isMobile || shouldReduceMotion || !document.startViewTransition) {
       setTheme(newTheme);
-    };
-
-    if (!document.startViewTransition) {
-      switchTheme();
       return;
     }
+
+    const animation = createAnimation(variant, start, blur, gifUrl);
+    updateStyles(animation.css, animation.name);
 
     document.startViewTransition(() => {
       // Manually update DOM for synchronous View Transition capture
