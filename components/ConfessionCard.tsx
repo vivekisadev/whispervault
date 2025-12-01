@@ -184,7 +184,7 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
     return (
         <>
             <Card className="border border-border bg-card shadow-none hover:border-primary/50 transition-colors duration-200">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                     {/* Header: Tags & Time */}
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex flex-wrap gap-2">
@@ -204,25 +204,25 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
 
                     {/* Main Content */}
                     <div className="mb-6">
-                        <p className="text-[16px] leading-relaxed text-foreground font-normal whitespace-pre-wrap break-words">
+                        <p className="text-sm sm:text-[16px] leading-relaxed text-foreground font-normal whitespace-pre-wrap break-words">
                             {confession.content}
                         </p>
                     </div>
 
                     {/* Action Bar */}
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
+                    <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-border">
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-0.5 sm:gap-1 bg-secondary/50 rounded-lg p-0.5 sm:p-1">
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleVote('upvote')}
-                                    className={`h-8 w-8 rounded-md hover:bg-background ${userVote === 'upvote' ? 'text-green-500' : 'text-muted-foreground'
+                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-md hover:bg-background ${userVote === 'upvote' ? 'text-green-500' : 'text-muted-foreground'
                                         }`}
                                 >
-                                    <ArrowUp className="h-5 w-5" />
+                                    <ArrowUp className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </Button>
-                                <span className={`text-sm font-bold px-2 min-w-[1.5rem] text-center ${voteScore > 0 ? 'text-green-500' : voteScore < 0 ? 'text-red-500' : 'text-muted-foreground'
+                                <span className={`text-xs sm:text-sm font-bold px-1.5 sm:px-2 min-w-[1.25rem] sm:min-w-[1.5rem] text-center ${voteScore > 0 ? 'text-green-500' : voteScore < 0 ? 'text-red-500' : 'text-muted-foreground'
                                     }`}>
                                     {voteScore}
                                 </span>
@@ -230,10 +230,10 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleVote('downvote')}
-                                    className={`h-8 w-8 rounded-md hover:bg-background ${userVote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'
+                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-md hover:bg-background ${userVote === 'downvote' ? 'text-red-500' : 'text-muted-foreground'
                                         }`}
                                 >
-                                    <ArrowDown className="h-5 w-5" />
+                                    <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </Button>
                             </div>
 
@@ -241,10 +241,10 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setShowReplies(!showReplies)}
-                                className="h-10 px-3 text-muted-foreground hover:text-primary hover:bg-secondary/50 gap-2 rounded-lg transition-colors"
+                                className="h-8 sm:h-10 px-2 sm:px-3 text-muted-foreground hover:text-primary hover:bg-secondary/50 gap-1.5 sm:gap-2 rounded-lg transition-colors"
                             >
-                                <MessageCircle className="h-5 w-5" />
-                                <span className="text-sm font-medium">{localReplies.length}</span>
+                                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                                <span className="text-xs sm:text-sm font-medium">{localReplies.length}</span>
                             </Button>
                         </div>
 
@@ -252,9 +252,9 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                             variant="ghost"
                             size="icon"
                             onClick={() => setShowReportModal(true)}
-                            className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
                         >
-                            <Flag className="h-4 w-4" />
+                            <Flag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         </Button>
                     </div>
 

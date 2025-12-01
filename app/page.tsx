@@ -211,7 +211,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 py-6 sm:px-6 sm:py-10">
         {/* Mobile Tab Switcher */}
         {/* Mobile Tab Switcher */}
         <div className="md:hidden flex p-1 mb-6 bg-secondary/30 rounded-xl border border-white/5">

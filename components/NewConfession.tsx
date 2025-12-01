@@ -79,8 +79,8 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
 
     return (
         <Card className="border border-white/10 bg-card/50 backdrop-blur-xl shadow-lg">
-            <CardContent className="p-6">
-                <h3 className="text-lg font-bold mb-4 text-foreground tracking-tight">Share Your Confession</h3>
+            <CardContent className="p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-foreground tracking-tight">Share Your Confession</h3>
 
                 <div className="space-y-4">
                     <div className="relative">
@@ -102,7 +102,7 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                             placeholder="What's on your mind? Share anonymously..."
-                            className="min-h-[120px] resize-none bg-secondary/30 border-border focus:border-primary rounded-lg text-[15px] placeholder:text-muted-foreground"
+                            className="min-h-[100px] sm:min-h-[120px] resize-none bg-secondary/30 border-border focus:border-primary rounded-lg text-base sm:text-[15px] placeholder:text-muted-foreground"
                             maxLength={500}
                         />
 
@@ -181,7 +181,7 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
                     <Button
                         onClick={handleSubmit}
                         disabled={!content.trim() || isSubmitting}
-                        className="w-full h-11 font-bold text-base rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(233,30,99,0.3)] hover:shadow-[0_0_25px_rgba(233,30,99,0.5)]"
+                        className="w-full h-10 sm:h-11 font-bold text-sm sm:text-base rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(233,30,99,0.3)] hover:shadow-[0_0_25px_rgba(233,30,99,0.5)]"
                     >
                         {isSubmitting ? 'Posting...' : 'Post Anonymously'}
                     </Button>

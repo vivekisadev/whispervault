@@ -163,21 +163,24 @@ export default function Chat() {
     };
 
     return (
-        <Card className="h-[600px] flex flex-col border border-border bg-card/50 backdrop-blur-xl overflow-hidden shadow-sm relative">
+        <Card className="h-[500px] sm:h-[600px] flex flex-col border border-border bg-card/50 backdrop-blur-xl overflow-hidden shadow-sm relative">
             {/* Image View Modal */}
+            {/* Image View Modal - Full Screen Fixed */}
             {viewingImage && (
                 <div
-                    className="absolute inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
                     onClick={() => setViewingImage(null)}
                 >
-                    <div className="relative max-w-[90%] max-h-[90%] p-2">
+                    <div className="relative w-full h-full p-4 flex items-center justify-center">
                         <button
                             onClick={() => setViewingImage(null)}
-                            className="absolute -top-8 right-0 text-foreground hover:text-primary transition-colors"
+                            className="absolute top-4 right-4 text-white/70 hover:text-white transition-colors z-[110]"
                         >
-                            <X className="h-6 w-6" />
+                            <X className="h-8 w-8" />
                         </button>
-                        <div className="relative rounded-lg overflow-hidden shadow-2xl border border-border">
+
+                        {/* Image Container - Full size, no crop */}
+                        <div className="relative w-full h-full flex items-center justify-center">
                             {/* Transparent overlay to prevent drag/save */}
                             <div
                                 className="absolute inset-0 z-10 bg-transparent"
@@ -186,7 +189,7 @@ export default function Chat() {
                             <img
                                 src={viewingImage}
                                 alt="Shared image"
-                                className="max-w-full max-h-[80vh] object-contain select-none pointer-events-none"
+                                className="max-w-full max-h-full object-contain select-none pointer-events-none shadow-2xl"
                                 draggable={false}
                             />
                         </div>
@@ -254,7 +257,7 @@ export default function Chat() {
             </CardHeader>
 
             {/* Messages */}
-            <div className={`flex-1 p-4 min-h-0 overflow-y-auto custom-scrollbar ${isPartnerDisconnected ? 'blur-sm' : ''}`}>
+            <div className={`flex-1 p-3 sm:p-4 min-h-0 overflow-y-auto custom-scrollbar ${isPartnerDisconnected ? 'blur-sm' : ''}`}>
                 {messages.length === 0 && (
                     <div className="h-full flex items-center justify-center">
                         <div className="text-center text-muted-foreground">
@@ -343,7 +346,7 @@ export default function Chat() {
 
             {/* Input */}
             <CardContent
-                className={`p-4 border-t border-border ${isPartnerDisconnected ? 'blur-sm' : ''}`}
+                className={`p-3 sm:p-4 border-t border-border ${isPartnerDisconnected ? 'blur-sm' : ''}`}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
             >
