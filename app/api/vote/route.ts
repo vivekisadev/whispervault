@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { targetId, targetType, voteType, action, replyId } = body;
+        const { targetId, targetType, voteType, action } = body;
 
         if (!targetId || !targetType || !voteType) {
             return NextResponse.json(
@@ -28,8 +28,6 @@ export async function POST(request: NextRequest) {
             // Add vote
             if (targetType === 'confession') {
                 success = await confessionStore.voteConfession(targetId, voteType);
-            } else if (targetType === 'reply' && replyId) {
-                success = await confessionStore.voteReply(targetId, replyId, voteType);
             }
         }
 
