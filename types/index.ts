@@ -16,8 +16,6 @@ export interface Reply {
     confessionId: string;
     content: string;
     timestamp: number;
-    upvotes: number;
-    downvotes: number;
 }
 
 export interface ChatMessage {

@@ -33,8 +33,6 @@ model Reply {
   id           String     @id @default(cuid())
   content      String
   timestamp    DateTime   @default(now())
-  upvotes      Int        @default(0)
-  downvotes    Int        @default(0)
   
   confessionId String
   confession   Confession @relation(fields: [confessionId], references: [id], onDelete: Cascade)

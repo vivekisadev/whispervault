@@ -132,7 +132,8 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
 
             if (!res.ok) throw new Error('Failed to reply');
 
-            const newReply = await res.json();
+            const data = await res.json();
+            const newReply = data.reply;
 
             // Update local state immediately without refreshing the whole page
             setLocalReplies(prev => {
