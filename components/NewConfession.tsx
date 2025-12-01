@@ -11,8 +11,10 @@ import dynamic from 'next/dynamic';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
+import { Confession } from '@/types';
+
 interface NewConfessionProps {
-    onConfessionCreated: () => void;
+    onConfessionCreated: (newConfession: Confession) => void;
 }
 
 export default function NewConfession({ onConfessionCreated }: NewConfessionProps) {
@@ -52,9 +54,11 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
                 throw new Error(data.error || 'Failed to create confession');
             }
 
+            const newConfession = await response.json();
+
             setContent('');
             setTags([]);
-            onConfessionCreated();
+            onConfessionCreated(newConfession);
         } catch (err: any) {
             setError(err.message);
         } finally {

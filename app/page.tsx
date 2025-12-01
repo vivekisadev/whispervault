@@ -66,6 +66,13 @@ export default function Home() {
   // ... (keep existing code)
 
 
+  const handleNewConfession = (newConfession: Confession) => {
+    setConfessions(prev => [newConfession, ...prev]);
+  };
+
+  // ... (keep existing code)
+
+
   //this is for search functionality
   const filteredConfessions = confessions.filter(confession => {
     const matchesSearch = confession.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -200,31 +207,18 @@ export default function Home() {
             <ArrowUpRight className="w-3 h-3 opacity-60 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a >
         </div >
-      </header >
+      </header>
 
       {/* Main Content */}
-      < main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10" >
+      <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10">
         {/* Mobile Tab Switcher */}
-        < div className="md:hidden mb-8 flex p-1 bg-secondary/50 rounded-lg" >
-          <button
-            onClick={() => setActiveTab('confessions')}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'confessions' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
-          >
-            Confessions
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'chat' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
-          >
-            Live Chat
-          </button>
-        </div >
+        {/* ... (keep mobile tabs) ... */}
 
         {activeTab === 'confessions' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             {/* Left Sidebar */}
             <div className="lg:col-span-4 space-y-8">
-              <NewConfession onConfessionCreated={fetchConfessions} />
+              <NewConfession onConfessionCreated={handleNewConfession} />
 
               {/* Desktop Stats & Guidelines */}
               <div className="hidden lg:block space-y-6">

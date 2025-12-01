@@ -33,7 +33,12 @@ export const generateId = (): string => {
 
 // Format timestamp
 export const formatTimestamp = (timestamp: number): string => {
-    return formatDistanceToNow(timestamp, { addSuffix: true });
+    if (!timestamp || isNaN(timestamp)) return 'Just now';
+    try {
+        return formatDistanceToNow(timestamp, { addSuffix: true });
+    } catch (e) {
+        return 'Just now';
+    }
 };
 
 // Calculate vote score

@@ -135,7 +135,14 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
             const newReply = await res.json();
 
             // Update local state immediately without refreshing the whole page
-            setLocalReplies(prev => [...prev, newReply]);
+            setLocalReplies(prev => {
+                const replyWithTimestamp = {
+                    ...newReply,
+                    timestamp: newReply.timestamp || Date.now()
+                };
+                const updated = [...prev, replyWithTimestamp];
+                return updated;
+            });
             setReplyContent('');
 
             // Optional: Notify parent if needed, but we avoid full re-fetch
@@ -265,8 +272,8 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
 
                             {/* Replies List */}
                             <div className="space-y-4">
-                                {localReplies.map((reply) => (
-                                    <div key={reply.id} className="glass-message px-4 py-3">
+                                {(localReplies || []).map((reply, index) => (
+                                    <div key={reply.id || index} className="glass-message px-4 py-3 animate-in slide-in-from-bottom-2 fade-in duration-300">
                                         <div className="relative z-10">
                                             <p className="text-sm text-foreground mb-2 leading-relaxed">{reply.content}</p>
                                             <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
