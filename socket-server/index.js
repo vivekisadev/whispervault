@@ -51,7 +51,20 @@ io.on('connection', (socket) => {
             waitingQueue = waitingQueue.filter(u => u.userId !== userId);
         }
 
-        // Cleanup any existing room for this user
+        // RECONNECTION LOGIC: Check if user was recently in a room (e.g. accidental refresh)
+        // We need to track "recent disconnects" to do this effectively.
+        // For now, let's see if there's a room where the partner is "waiting" for this specific user.
+        // Actually, since `userRooms` is in-memory and cleared on disconnect, we can't easily know *which* room they were in unless we persist it slightly longer.
+
+        // IMPROVED STRATEGY: 
+        // When a user disconnects, don't immediately destroy the room. Mark it as "paused".
+        // If they reconnect within 10 seconds, put them back in.
+        // However, implementing full "paused" rooms is complex.
+
+        // SIMPLER STRATEGY for "only 2 people":
+        // If there are very few people, relax the "recentPartners" restriction.
+
+        // Cleanup any existing room for this user (if they are somehow still mapped)
         const existingRoomId = userRooms.get(userId);
         if (existingRoomId) {
             handleCleanup(userId);
@@ -67,14 +80,17 @@ io.on('connection', (socket) => {
         // We need to find a valid partner in the queue
         let partnerIndex = -1;
 
+        // RELAXED MATCHING: If queue is small (e.g. just 1 person waiting), ignore history to ensure they match.
+        const ignoreHistory = waitingQueue.length <= 1;
+
         for (let i = 0; i < waitingQueue.length; i++) {
             const potential = waitingQueue[i];
 
             // Skip if it's the user themselves
             if (potential.userId === userId) continue;
 
-            // Skip if this person is in the recent partners history
-            if (recentPartners.includes(potential.userId)) continue;
+            // Skip if this person is in the recent partners history (UNLESS we are desperate)
+            if (!ignoreHistory && recentPartners.includes(potential.userId)) continue;
 
             // Check if socket is still active
             const partnerSocket = io.sockets.sockets.get(potential.socketId);
@@ -139,7 +155,6 @@ io.on('connection', (socket) => {
                 chatRooms.delete(roomId);
                 userRooms.delete(userId);
                 userRooms.delete(partnerUserId);
-                // Revert history update since match failed (optional, but cleaner)
             }
 
         } else {

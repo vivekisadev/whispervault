@@ -114,12 +114,14 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
         }
     };
 
+    const [localReplies, setLocalReplies] = useState(confession.replies);
+
     const handleReply = async () => {
         if (!replyContent.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
         try {
-            await fetch('/api/confessions/reply', {
+            const res = await fetch('/api/confessions/reply', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -128,8 +130,16 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                 }),
             });
 
+            if (!res.ok) throw new Error('Failed to reply');
+
+            const newReply = await res.json();
+
+            // Update local state immediately without refreshing the whole page
+            setLocalReplies(prev => [...prev, newReply]);
             setReplyContent('');
-            onUpdate();
+
+            // Optional: Notify parent if needed, but we avoid full re-fetch
+            // onUpdate(); 
         } catch (error) {
             console.error('Reply failed:', error);
         } finally {
@@ -218,7 +228,7 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                                 className="h-10 px-3 text-muted-foreground hover:text-primary hover:bg-secondary/50 gap-2 rounded-lg transition-colors"
                             >
                                 <MessageCircle className="h-5 w-5" />
-                                <span className="text-sm font-medium">{confession.replies.length}</span>
+                                <span className="text-sm font-medium">{localReplies.length}</span>
                             </Button>
                         </div>
 
@@ -255,11 +265,13 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
 
                             {/* Replies List */}
                             <div className="space-y-4">
-                                {confession.replies.map((reply) => (
-                                    <div key={reply.id} className="bg-secondary/20 p-4 rounded-lg border border-border/50">
-                                        <p className="text-sm text-foreground mb-2 leading-relaxed">{reply.content}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{formatTimestamp(reply.timestamp)}</span>
+                                {localReplies.map((reply) => (
+                                    <div key={reply.id} className="glass-message px-4 py-3">
+                                        <div className="relative z-10">
+                                            <p className="text-sm text-foreground mb-2 leading-relaxed">{reply.content}</p>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
+                                                <span>{formatTimestamp(reply.timestamp)}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

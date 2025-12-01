@@ -65,7 +65,7 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
     const remainingChars = 500 - content.length;
 
     return (
-        <Card className="border border-border bg-card shadow-none">
+        <Card className="border border-white/10 bg-card/50 backdrop-blur-xl shadow-lg">
             <CardContent className="p-6">
                 <h3 className="text-lg font-bold mb-4 text-foreground tracking-tight">Share Your Confession</h3>
 
