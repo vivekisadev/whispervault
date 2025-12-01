@@ -22,8 +22,8 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
     const userId = getUserId();
 
     // Optimistic UI state
-    const [localUpvotes, setLocalUpvotes] = useState(confession.upvotes);
-    const [localDownvotes, setLocalDownvotes] = useState(confession.downvotes);
+    const [localUpvotes, setLocalUpvotes] = useState(confession.upvotes || 0);
+    const [localDownvotes, setLocalDownvotes] = useState(confession.downvotes || 0);
     const [userVote, setUserVote] = useState<'upvote' | 'downvote' | null>(() => {
         if (hasUserVoted(confession.id, userId, 'upvote')) return 'upvote';
         if (hasUserVoted(confession.id, userId, 'downvote')) return 'downvote';
@@ -114,12 +114,14 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
         }
     };
 
-    const [localReplies, setLocalReplies] = useState(confession.replies);
+    const [localReplies, setLocalReplies] = useState(confession.replies || []);
+    const [replySuccess, setReplySuccess] = useState(false);
 
     const handleReply = async () => {
         if (!replyContent.trim() || isSubmitting) return;
 
         setIsSubmitting(true);
+        setReplySuccess(false);
         try {
             const res = await fetch('/api/confessions/reply', {
                 method: 'POST',
@@ -135,6 +137,10 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
             const data = await res.json();
             const newReply = data.reply;
 
+            if (!newReply) {
+                throw new Error('Invalid reply data received');
+            }
+
             // Update local state immediately without refreshing the whole page
             setLocalReplies(prev => {
                 const replyWithTimestamp = {
@@ -145,6 +151,8 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                 return updated;
             });
             setReplyContent('');
+            setReplySuccess(true);
+            setTimeout(() => setReplySuccess(false), 3000);
 
             // Optional: Notify parent if needed, but we avoid full re-fetch
             // onUpdate(); 
@@ -270,6 +278,11 @@ export default function ConfessionCard({ confession, onUpdate }: ConfessionCardP
                                     Reply
                                 </Button>
                             </div>
+                            {replySuccess && (
+                                <div className="text-xs text-green-400 font-medium px-3 py-1.5 bg-green-500/10 backdrop-blur-xl rounded-full border border-green-500/20 shadow-sm animate-in fade-in slide-in-from-left-2 duration-300 inline-block">
+                                    Reply posted successfully!
+                                </div>
+                            )}
 
                             {/* Replies List */}
                             <div className="space-y-4">

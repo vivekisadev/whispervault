@@ -75,6 +75,7 @@ export default function Home() {
 
   //this is for search functionality
   const filteredConfessions = confessions.filter(confession => {
+    if (!confession) return false;
     const matchesSearch = confession.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (confession.tags && confession.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     const matchesTag = selectedTag ? confession.tags && confession.tags.includes(selectedTag) : true;
@@ -212,7 +213,27 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10">
         {/* Mobile Tab Switcher */}
-        {/* ... (keep mobile tabs) ... */}
+        {/* Mobile Tab Switcher */}
+        <div className="md:hidden flex p-1 mb-6 bg-secondary/30 rounded-xl border border-white/5">
+          <button
+            onClick={() => setActiveTab('confessions')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ${activeTab === 'confessions'
+              ? 'bg-primary text-primary-foreground shadow-lg'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Confessions
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all duration-300 ${activeTab === 'chat'
+              ? 'bg-primary text-primary-foreground shadow-lg'
+              : 'text-muted-foreground hover:text-foreground'
+              }`}
+          >
+            Live Chat
+          </button>
+        </div>
 
         {activeTab === 'confessions' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">

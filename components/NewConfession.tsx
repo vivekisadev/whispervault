@@ -23,6 +23,7 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
     const [tagInput, setTagInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const handleAddTag = () => {
@@ -41,6 +42,7 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
 
         setIsSubmitting(true);
         setError('');
+        setSuccessMessage('');
 
         try {
             const response = await fetch('/api/confessions', {
@@ -54,10 +56,17 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
                 throw new Error(data.error || 'Failed to create confession');
             }
 
-            const newConfession = await response.json();
+            const data = await response.json();
+            const newConfession = data.confession;
+
+            if (!newConfession) {
+                throw new Error('Received invalid response from server');
+            }
 
             setContent('');
             setTags([]);
+            setSuccessMessage('Confession posted successfully!');
+            setTimeout(() => setSuccessMessage(''), 3000);
             onConfessionCreated(newConfession);
         } catch (err: any) {
             setError(err.message);
@@ -154,6 +163,12 @@ export default function NewConfession({ onConfessionCreated }: NewConfessionProp
                                     </button>
                                 </Badge>
                             ))}
+                        </div>
+                    )}
+
+                    {successMessage && (
+                        <div className="text-sm text-green-400 font-medium bg-green-500/10 backdrop-blur-2xl p-4 rounded-2xl border border-green-500/20 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+                            {successMessage}
                         </div>
                     )}
 
