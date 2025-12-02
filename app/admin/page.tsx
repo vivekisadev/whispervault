@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Shield, Trash2, Ban, CheckCircle, RefreshCw, AlertTriangle, Activity, Lock } from 'lucide-react';
+import { Shield, Trash2, Ban, CheckCircle, RefreshCw, AlertTriangle, Activity, Lock, LogOut } from 'lucide-react';
 import { Confession } from '@/types';
 import { formatTimestamp } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,6 +57,15 @@ export default function AdminPage() {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            router.replace('/admin/login');
+        } catch (error) {
+            console.error('Logout failed', error);
+        }
+    };
 
     // Admin actions
     const handleAction = async (action: string, payload: any) => {
@@ -117,14 +126,25 @@ export default function AdminPage() {
                             <p className="text-muted-foreground">Manage confessions, reports, and security</p>
                         </div>
                     </div>
-                    <Button
-                        onClick={fetchData}
-                        variant="outline"
-                        size="icon"
-                        className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                        <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={fetchData}
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
+                            <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                        <Button
+                            onClick={handleLogout}
+                            variant="destructive"
+                            size="icon"
+                            className="rounded-full hover:bg-destructive/90 transition-colors"
+                            title="Logout"
+                        >
+                            <LogOut className="h-5 w-5" />
+                        </Button>
+                    </div>
                 </motion.div>
 
                 {/* Stats Overview */}
