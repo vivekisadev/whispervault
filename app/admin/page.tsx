@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function AdminPage() {
     const router = useRouter();
 
-    // Client‑side auth guard
+    // Client‑side auth guard with session timeout (1 minute of inactivity)
     useEffect(() => {
         const checkAuth = async () => {
             try {
@@ -26,7 +26,36 @@ export default function AdminPage() {
             }
         };
         checkAuth();
-    }, []);
+
+        // Session timeout: 1 minute of inactivity
+        let inactivityTimer: NodeJS.Timeout;
+
+        const resetInactivityTimer = () => {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(async () => {
+                // Auto-logout after 1 minute of inactivity
+                await fetch('/api/admin/logout', { method: 'POST' });
+                router.replace('/admin/login');
+            }, 60000); // 60 seconds = 1 minute
+        };
+
+        // Track user activity
+        const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+        activityEvents.forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
+
+        // Start the timer
+        resetInactivityTimer();
+
+        // Cleanup
+        return () => {
+            clearTimeout(inactivityTimer);
+            activityEvents.forEach(event => {
+                document.removeEventListener(event, resetInactivityTimer);
+            });
+        };
+    }, [router]);
 
     // State
     const [stats, setStats] = useState<any>(null);
@@ -86,6 +115,15 @@ export default function AdminPage() {
 
     useEffect(() => {
         fetchData();
+
+        // Auto-refresh data every minute (60 seconds)
+        const refreshInterval = setInterval(() => {
+            fetchData();
+        }, 60000); // 60 seconds = 1 minute
+
+        return () => {
+            clearInterval(refreshInterval);
+        };
     }, []);
 
     const handleLogout = async () => {

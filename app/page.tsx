@@ -59,19 +59,30 @@ export default function Home() {
 
     // Connect to Socket.IO server (separate server in production)
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+    let socket: any = null;
+
     if (socketUrl) {
-      const socket = io(socketUrl, {
+      socket = io(socketUrl, {
         path: '/api/socket',
       });
 
       socket.on('online-users', (count: number) => {
         setOnlineUsers(count);
       });
-
-      return () => {
-        socket.disconnect();
-      };
     }
+
+    // Auto-refresh confessions every minute (60 seconds)
+    const refreshInterval = setInterval(() => {
+      fetchConfessions(true); // Background refresh
+    }, 60000); // 60 seconds = 1 minute
+
+    // Cleanup function
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // ... (keep existing code)
