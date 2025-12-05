@@ -27,7 +27,13 @@ export interface ChatMessage {
     userId: string;
     roomId: string;
     image?: string;
+    audio?: string;
     isReported?: boolean;
+    replyTo?: {
+        id: string;
+        content: string;
+        username: string;
+    }
 }
 
 export interface ChatRoom {

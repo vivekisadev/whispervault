@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/types';
 import { generateId, generateAnonymousName, formatTimestamp } from '@/lib/utils';
-import { Send, UserX, Loader, Image as ImageIcon, X, Smile } from 'lucide-react';
+import { Send, UserX, Loader, Image as ImageIcon, X, Smile, Reply, Mic, Trash2, Square } from 'lucide-react';
+import SwipeableMessage from './SwipeableMessage';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,70 @@ import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+
+const AudioVisualizer = ({ stream }: { stream: MediaStream | null }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationRef = useRef<number>(0);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+
+    useEffect(() => {
+        if (!stream || !canvasRef.current) return;
+
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const analyser = audioContext.createAnalyser();
+        const source = audioContext.createMediaStreamSource(stream);
+
+        analyser.fftSize = 64; // Low FFT size for fewer bars (minimalist)
+        source.connect(analyser);
+        analyserRef.current = analyser;
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const draw = () => {
+            if (!canvas) return;
+
+            animationRef.current = requestAnimationFrame(draw);
+            analyser.getByteFrequencyData(dataArray);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const barWidth = (canvas.width / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            // Draw bars centered vertically
+            const centerY = canvas.height / 2;
+
+            for (let i = 0; i < bufferLength; i++) {
+                barHeight = (dataArray[i] / 255) * canvas.height;
+
+                // Minimalist rounded bars
+                ctx.fillStyle = `rgba(236, 72, 153, ${Math.max(0.3, dataArray[i] / 255)})`; // Pink with opacity based on volume
+
+                // Draw rounded pill shape
+                ctx.beginPath();
+                ctx.roundRect(x, centerY - barHeight / 2, barWidth - 2, Math.max(4, barHeight), 4);
+                ctx.fill();
+
+                x += barWidth + 1;
+            }
+        };
+
+        draw();
+
+        return () => {
+            cancelAnimationFrame(animationRef.current);
+            audioContext.close();
+        };
+    }, [stream]);
+
+    return <canvas ref={canvasRef} width={200} height={40} className="w-full h-full" />;
+};
 
 export default function Chat() {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -32,6 +97,16 @@ export default function Chat() {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [myUserId, setMyUserId] = useState<string | null>(null);
+    // Inside Chat component
+    const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+
+    // Audio Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const [recordingStream, setRecordingStream] = useState<MediaStream | null>(null);
 
     useEffect(() => {
         // Connect to external Socket.IO server (deployed separately)
@@ -140,12 +215,94 @@ export default function Chat() {
         socket.emit('send-message', {
             content: inputMessage,
             image: selectedImage,
-            chatUserId
+            chatUserId,
+            replyTo: replyingTo ? {
+                id: replyingTo.id,
+                content: replyingTo.content,
+                username: 'Stranger' // Since it's anonymous
+            } : undefined
         });
 
         setInputMessage('');
         setSelectedImage(null);
+        setReplyingTo(null);
         socket.emit('typing', { isTyping: false, userId: chatUserId });
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            setRecordingStream(stream);
+
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(audioBlob);
+                reader.onloadend = () => {
+                    const base64Audio = reader.result as string;
+                    if (socket && isConnected) {
+                        socket.emit('send-message', {
+                            content: '',
+                            audio: base64Audio,
+                            chatUserId,
+                            replyTo: replyingTo ? {
+                                id: replyingTo.id,
+                                content: replyingTo.content,
+                                username: 'Stranger'
+                            } : undefined
+                        });
+                        setReplyingTo(null);
+                    }
+                };
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingDuration(0);
+            timerRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+        } catch (error) {
+            console.error("Error accessing microphone:", error);
+            alert("Could not access microphone. Please ensure permissions are granted.");
+        }
+    };
+
+    const stopRecordingAndSend = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            setRecordingStream(null);
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.onstop = null; // Prevent sending
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            setRecordingStream(null);
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
+    const formatDuration = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const handleTyping = (value: string) => {
@@ -303,37 +460,54 @@ export default function Chat() {
                                 key={message.id}
                                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} animate-fade-in`}
                             >
-                                <div
-                                    className={`max-w-[70%] px-4 py-2 backdrop-blur-md border rounded-2xl shadow-sm ${isOwnMessage
-                                        ? 'bg-primary/20 border-primary/20 text-foreground rounded-tr-sm'
-                                        : 'bg-secondary/30 border-border/50 text-foreground rounded-tl-sm'
-                                        }`}
+                                <SwipeableMessage
+                                    message={message}
+                                    onReply={setReplyingTo}
+                                    isOwnMessage={isOwnMessage}
                                 >
-                                    <div className="relative z-10">
-                                        {message.image && (
-                                            <div
-                                                className="relative mb-2 rounded-lg overflow-hidden group cursor-zoom-in"
-                                                onClick={() => setViewingImage(message.image!)}
-                                            >
-                                                {/* Transparent overlay to prevent drag/save but allow click */}
-                                                <div
-                                                    className="absolute inset-0 z-10 bg-transparent"
-                                                    onContextMenu={(e) => e.preventDefault()}
-                                                />
-                                                <img
-                                                    src={message.image}
-                                                    alt="Shared image"
-                                                    className="max-w-full max-h-48 object-cover rounded-lg select-none pointer-events-none"
-                                                    draggable={false}
-                                                />
+                                    <div
+                                        className={`max-w-[70%] px-4 py-2 backdrop-blur-md border rounded-2xl shadow-sm ${isOwnMessage
+                                            ? 'bg-primary/20 border-primary/20 text-foreground rounded-tr-sm'
+                                            : 'bg-secondary/30 border-border/50 text-foreground rounded-tl-sm'
+                                            }`}
+                                    >
+                                        {message.replyTo && (
+                                            <div className="mb-1 pb-1 border-b border-white/10 text-xs opacity-70 flex items-center gap-1">
+                                                <div className="w-1 h-3 bg-primary rounded-full"></div>
+                                                <span>Replying to {message.replyTo.username}</span>
                                             </div>
                                         )}
-                                        {message.content && <p className="text-sm mb-1">{message.content}</p>}
-                                        <p className="text-xs opacity-70">
-                                            {formatTimestamp(message.timestamp)}
-                                        </p>
+                                        <div className="relative z-10">
+                                            {message.image && (
+                                                <div
+                                                    className="relative mb-2 rounded-lg overflow-hidden group cursor-zoom-in"
+                                                    onClick={() => setViewingImage(message.image!)}
+                                                >
+                                                    {/* Transparent overlay to prevent drag/save but allow click */}
+                                                    <div
+                                                        className="absolute inset-0 z-10 bg-transparent"
+                                                        onContextMenu={(e) => e.preventDefault()}
+                                                    />
+                                                    <img
+                                                        src={message.image}
+                                                        alt="Shared image"
+                                                        className="max-w-full max-h-48 object-cover rounded-lg select-none pointer-events-none"
+                                                        draggable={false}
+                                                    />
+                                                </div>
+                                            )}
+                                            {message.content && <p className="text-sm mb-1">{message.content}</p>}
+                                            {message.audio && (
+                                                <div className="mt-1 mb-1 min-w-[200px]">
+                                                    <audio controls src={message.audio} className="w-full h-8" />
+                                                </div>
+                                            )}
+                                            <p className="text-xs opacity-70">
+                                                {formatTimestamp(message.timestamp)}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                </SwipeableMessage>
                             </div>
                         );
                     })}
@@ -361,6 +535,28 @@ export default function Chat() {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
             >
+                {replyingTo && (
+                    <div className="mb-2 px-4 py-2 bg-secondary/50 border border-border rounded-lg flex items-center justify-between animate-in slide-in-from-bottom-2">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <Reply className="h-4 w-4 text-primary shrink-0" />
+                            <div className="flex flex-col text-sm">
+                                <span className="font-medium text-primary">Replying to Stranger</span>
+                                <span className="text-muted-foreground truncate max-w-[200px]">
+                                    {replyingTo.content || "Image"}
+                                </span>
+                            </div>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setReplyingTo(null)}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+
                 {selectedImage && (
                     <div className="mb-2 relative inline-block">
                         <img src={selectedImage} alt="Preview" className="h-20 w-20 object-cover rounded-lg border border-border" />
@@ -389,50 +585,100 @@ export default function Chat() {
                     </div>
                 )}
 
-                <div className="flex gap-2 mb-2">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        ref={fileInputRef}
-                        onChange={handleImageSelect}
-                    />
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
-                        className="shrink-0"
-                    >
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
-                        className="shrink-0"
-                    >
-                        <Smile className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Input
-                        type="text"
-                        value={inputMessage}
-                        onChange={(e) => handleTyping(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Type a message..."
-                        className="flex-1 bg-background border-input"
-                        disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
-                        maxLength={1000}
-                    />
-                    <Button
-                        onClick={handleSendMessage}
-                        disabled={(!inputMessage.trim() && !selectedImage) || !isConnected || userCount !== 2 || isPartnerDisconnected}
-                        size="icon"
-                        className="bg-gradient-to-r from-primary to-pink-500 hover:opacity-90 shrink-0"
-                    >
-                        <Send className="h-4 w-4" />
-                    </Button>
+                <div className="flex gap-2 mb-2 items-center">
+                    {isRecording ? (
+                        <div className="flex-1 flex items-center gap-3 bg-background/80 backdrop-blur-md border border-primary/20 rounded-2xl px-4 py-2 shadow-inner animate-in fade-in duration-200">
+                            {/* Trash / Cancel */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={cancelRecording}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors rounded-full shrink-0"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+
+                            {/* Visualizer Container */}
+                            <div className="flex-1 h-10 flex items-center justify-center relative overflow-hidden mx-2">
+                                <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+                                    <div className="w-full h-[1px] bg-primary"></div>
+                                </div>
+                                <AudioVisualizer stream={recordingStream} />
+                            </div>
+
+                            {/* Timer */}
+                            <span className="text-xs font-mono font-medium text-primary/80 tabular-nums shrink-0 w-12 text-center">
+                                {formatDuration(recordingDuration)}
+                            </span>
+
+                            {/* Send Button */}
+                            <Button
+                                size="icon"
+                                onClick={stopRecordingAndSend}
+                                className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shrink-0 shadow-md transform hover:scale-105 transition-all"
+                            >
+                                <Send className="h-3 w-3" />
+                            </Button>
+                        </div>
+                    ) : (
+                        <>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleImageSelect}
+                            />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
+                                className="shrink-0"
+                            >
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
+                                className="shrink-0"
+                            >
+                                <Smile className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Input
+                                type="text"
+                                value={inputMessage}
+                                onChange={(e) => handleTyping(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Type a message..."
+                                className="flex-1 bg-background border-input"
+                                disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
+                                maxLength={1000}
+                            />
+                            {inputMessage.trim() || selectedImage ? (
+                                <Button
+                                    onClick={handleSendMessage}
+                                    disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
+                                    size="icon"
+                                    className="bg-gradient-to-r from-primary to-pink-500 hover:opacity-90 shrink-0"
+                                >
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={startRecording}
+                                    disabled={!isConnected || userCount !== 2 || isPartnerDisconnected}
+                                    size="icon"
+                                    variant="outline"
+                                    className="shrink-0 hover:bg-primary/10 hover:text-primary border-primary/20"
+                                >
+                                    <Mic className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </>
+                    )}
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
                     You are chatting as <span className="text-primary font-medium">{chatName}</span>
