@@ -14,6 +14,7 @@ interface SwipeableMessageProps {
     children: React.ReactNode;
     message: ChatMessage;
     onReply: (message: ChatMessage) => void;
+    onReact: (messageId: string, emoji: string) => void;
     isOwnMessage: boolean;
 }
 
@@ -21,6 +22,7 @@ export default function SwipeableMessage({
     children,
     message,
     onReply,
+    onReact,
     isOwnMessage,
 }: SwipeableMessageProps) {
     const controls = useAnimation();
@@ -67,8 +69,8 @@ export default function SwipeableMessage({
     };
 
     return (
-        <div className="relative flex items-center w-full group">
-            <div className={`absolute left-0 pl-2 flex items-center justify-center transition-opacity duration-200 ${showReplyIcon ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`relative flex items-center group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+            <div className={`absolute ${isOwnMessage ? 'right-full mr-2' : 'left-full ml-2'} flex items-center justify-center transition-opacity duration-200 ${showReplyIcon ? 'opacity-100' : 'opacity-0'}`}>
                 <div className="bg-primary/20 p-2 rounded-full">
                     <Reply className="w-4 h-4 text-primary" />
                 </div>
@@ -78,7 +80,7 @@ export default function SwipeableMessage({
             <motion.div
                 {...bind() as any}
                 animate={controls}
-                className="w-full touch-pan-y"
+                className="touch-pan-y"
                 style={{ touchAction: 'pan-y' }}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
@@ -88,24 +90,40 @@ export default function SwipeableMessage({
             >
                 <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
                     <DropdownMenuTrigger asChild>
-                        <div className="cursor-default select-none">
+                        <div className="cursor-default select-none relative">
                             {children}
+                            {message.reaction && (
+                                <div className="absolute -bottom-3 right-2 bg-background/90 backdrop-blur-md border border-border/50 rounded-full px-2 py-0.5 text-sm shadow-md animate-in zoom-in duration-200 z-20 flex items-center justify-center min-w-[24px]">
+                                    {message.reaction}
+                                </div>
+                            )}
                         </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-48">
+                    <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-64 p-2">
+                        <div className="grid grid-cols-6 gap-1 mb-2">
+                            {['👍', '❤️', '😂', '😮', '😢', '😡'].map((emoji) => (
+                                <button
+                                    key={emoji}
+                                    className="text-lg hover:bg-secondary rounded-md p-1.5 transition-colors flex items-center justify-center"
+                                    onClick={() => {
+                                        onReact(message.id, emoji);
+                                        setMenuOpen(false);
+                                    }}
+                                >
+                                    {emoji}
+                                </button>
+                            ))}
+                        </div>
                         <DropdownMenuItem onClick={() => onReply(message)}>
                             <Reply className="mr-2 h-4 w-4" />
                             <span>Reply</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(message.content)}>
-                            <Copy className="mr-2 h-4 w-4" />
-                            <span>Copy Text</span>
-                        </DropdownMenuItem>
-                        {/* Add Reaction Logic Here */}
-                        <DropdownMenuItem onClick={() => {/* Handle reaction */ }}>
-                            <Smile className="mr-2 h-4 w-4" />
-                            <span>React</span>
-                        </DropdownMenuItem>
+                        {message.content && (
+                            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(message.content)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>Copy Text</span>
+                            </DropdownMenuItem>
+                        )}
                         {!isOwnMessage && (
                             <DropdownMenuItem className="text-destructive">
                                 <Flag className="mr-2 h-4 w-4" />

@@ -28,6 +28,7 @@ export interface ChatMessage {
     roomId: string;
     image?: string;
     audio?: string;
+    reaction?: string;
     isReported?: boolean;
     replyTo?: {
         id: string;

@@ -4,6 +4,7 @@ import { ChatMessage } from '@/types';
 import { generateId, generateAnonymousName, formatTimestamp } from '@/lib/utils';
 import { Send, UserX, Loader, Image as ImageIcon, X, Smile, Reply, Mic, Trash2, Square } from 'lucide-react';
 import SwipeableMessage from './SwipeableMessage';
+import AudioPlayer from './AudioPlayer';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -159,6 +160,12 @@ export default function Chat() {
             setIsTyping(isTyping);
         });
 
+        newSocket.on('new-reaction', (data: { messageId: string, reaction: string }) => {
+            setMessages(prev => prev.map(msg =>
+                msg.id === data.messageId ? { ...msg, reaction: data.reaction } : msg
+            ));
+        });
+
         newSocket.on('disconnect', () => {
             setIsConnected(false);
             setMyUserId(null);
@@ -218,7 +225,7 @@ export default function Chat() {
             chatUserId,
             replyTo: replyingTo ? {
                 id: replyingTo.id,
-                content: replyingTo.content,
+                content: replyingTo.content || (replyingTo.audio ? "🎤 Audio Message" : replyingTo.image ? "📷 Image" : "Message"),
                 username: 'Stranger' // Since it's anonymous
             } : undefined
         });
@@ -234,7 +241,9 @@ export default function Chat() {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             setRecordingStream(stream);
 
-            const mediaRecorder = new MediaRecorder(stream);
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'audio/webm;codecs=opus'
+            });
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
 
@@ -246,6 +255,10 @@ export default function Chat() {
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                if (audioBlob.size === 0) {
+                    console.warn("Audio recording was empty");
+                    return;
+                }
                 const reader = new FileReader();
                 reader.readAsDataURL(audioBlob);
                 reader.onloadend = () => {
@@ -257,7 +270,7 @@ export default function Chat() {
                             chatUserId,
                             replyTo: replyingTo ? {
                                 id: replyingTo.id,
-                                content: replyingTo.content,
+                                content: replyingTo.content || (replyingTo.audio ? "🎤 Audio Message" : replyingTo.image ? "📷 Image" : "Message"),
                                 username: 'Stranger'
                             } : undefined
                         });
@@ -310,6 +323,17 @@ export default function Chat() {
 
         if (socket && isConnected) {
             socket.emit('typing', { isTyping: value.length > 0, userId: chatUserId });
+        }
+    };
+
+    const handleReaction = (messageId: string, reaction: string) => {
+        // Optimistic update
+        setMessages(prev => prev.map(msg =>
+            msg.id === messageId ? { ...msg, reaction } : msg
+        ));
+
+        if (socket && isConnected) {
+            socket.emit('add-reaction', { messageId, reaction, roomId });
         }
     };
 
@@ -463,6 +487,7 @@ export default function Chat() {
                                 <SwipeableMessage
                                     message={message}
                                     onReply={setReplyingTo}
+                                    onReact={handleReaction}
                                     isOwnMessage={isOwnMessage}
                                 >
                                     <div
@@ -472,9 +497,9 @@ export default function Chat() {
                                             }`}
                                     >
                                         {message.replyTo && (
-                                            <div className="mb-1 pb-1 border-b border-white/10 text-xs opacity-70 flex items-center gap-1">
-                                                <div className="w-1 h-3 bg-primary rounded-full"></div>
-                                                <span>Replying to {message.replyTo.username}</span>
+                                            <div className="mb-2 p-2 rounded-md bg-black/5 dark:bg-black/20 border-l-4 border-primary/70 text-xs flex flex-col">
+                                                <span className="text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">{message.replyTo.username}</span>
+                                                <span className="opacity-80 line-clamp-1 italic">{message.replyTo.content}</span>
                                             </div>
                                         )}
                                         <div className="relative z-10">
@@ -498,8 +523,8 @@ export default function Chat() {
                                             )}
                                             {message.content && <p className="text-sm mb-1">{message.content}</p>}
                                             {message.audio && (
-                                                <div className="mt-1 mb-1 min-w-[200px]">
-                                                    <audio controls src={message.audio} className="w-full h-8" />
+                                                <div className="mt-1 mb-1">
+                                                    <AudioPlayer src={message.audio} />
                                                 </div>
                                             )}
                                             <p className="text-xs opacity-70">
@@ -542,7 +567,7 @@ export default function Chat() {
                             <div className="flex flex-col text-sm">
                                 <span className="font-medium text-primary">Replying to Stranger</span>
                                 <span className="text-muted-foreground truncate max-w-[200px]">
-                                    {replyingTo.content || "Image"}
+                                    {replyingTo.content || (replyingTo.audio ? "🎤 Audio Message" : replyingTo.image ? "📷 Image" : "Message")}
                                 </span>
                             </div>
                         </div>
