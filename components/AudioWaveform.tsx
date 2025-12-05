@@ -10,7 +10,7 @@ interface AudioWaveformProps {
 
 export default function AudioWaveform({ stream, isRecording, barColor = '#ec4899' }: AudioWaveformProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
+    const animationRef = useRef<number>(0);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const dataArrayRef = useRef<Uint8Array | null>(null);
     const historyRef = useRef<number[]>([]);
@@ -43,7 +43,7 @@ export default function AudioWaveform({ stream, isRecording, barColor = '#ec4899
             animationRef.current = requestAnimationFrame(draw);
 
             // Get time domain data
-            analyserRef.current.getByteTimeDomainData(dataArrayRef.current);
+            analyserRef.current.getByteTimeDomainData(dataArrayRef.current as any);
 
             // Calculate RMS (volume)
             let sum = 0;
