@@ -34,6 +34,8 @@ export interface ChatMessage {
         id: string;
         content: string;
         username: string;
+        audio?: string;
+        image?: string;
     }
 }
 

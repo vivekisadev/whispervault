@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/types';
 import { generateId, generateAnonymousName, formatTimestamp, formatChatTimestamp } from '@/lib/utils';
-import { Send, UserX, Loader, Image as ImageIcon, X, Smile, Reply, Mic, Trash2, Square } from 'lucide-react';
+import { Send, UserX, Loader, Image as ImageIcon, X, Smile, Reply, Mic, Trash2, Square, ArrowDown } from 'lucide-react';
 import SwipeableMessage from './SwipeableMessage';
 import AudioPlayer from './AudioPlayer';
 import AudioWaveform from './AudioWaveform';
@@ -33,6 +33,7 @@ export default function Chat() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
     const [myUserId, setMyUserId] = useState<string | null>(null);
     // Inside Chat component
@@ -298,7 +299,6 @@ export default function Chat() {
 
     return (
         <Card className="h-[500px] sm:h-[600px] flex flex-col border border-border bg-card/50 backdrop-blur-xl overflow-hidden shadow-sm relative">
-            {/* Image View Modal */}
             {/* Image View Modal - Full Screen Fixed */}
             {viewingImage && (
                 <div
@@ -391,7 +391,14 @@ export default function Chat() {
             </CardHeader>
 
             {/* Messages */}
-            <div className={`flex-1 p-3 sm:p-4 min-h-0 overflow-y-auto custom-scrollbar ${isPartnerDisconnected ? 'blur-sm' : ''}`}>
+            <div
+                className={`flex-1 p-2 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar relative ${isPartnerDisconnected ? 'blur-sm' : ''}`}
+                onScroll={(e) => {
+                    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+                    setShowScrollButton(!isNearBottom);
+                }}
+            >
                 {messages.length === 0 && (
                     <div className="h-full flex items-center justify-center">
                         <div className="text-center text-muted-foreground">
@@ -433,7 +440,7 @@ export default function Chat() {
                                     isOwnMessage={isOwnMessage}
                                 >
                                     <div
-                                        className={`max-w-[70%] px-4 py-2 backdrop-blur-md border rounded-2xl shadow-sm ${isOwnMessage
+                                        className={`max-w-[85%] px-3 py-2 backdrop-blur-md border rounded-2xl shadow-sm ${isOwnMessage
                                             ? 'bg-primary/20 border-primary/20 text-foreground rounded-tr-sm'
                                             : 'bg-secondary/30 border-border/50 text-foreground rounded-tl-sm'
                                             }`}
@@ -441,10 +448,11 @@ export default function Chat() {
                                         {message.replyTo && (
                                             <div className="mb-2 p-2 rounded-md bg-black/5 dark:bg-black/20 border-l-4 border-primary/70 text-xs flex flex-col">
                                                 <span className="text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">{message.replyTo.username}</span>
-                                                <span className="opacity-80 line-clamp-1 italic">{message.replyTo.content}</span>
+                                                <span className="opacity-80 line-clamp-1 italic">{message.replyTo.content || (message.replyTo.audio ? "🎤 Audio Message" : message.replyTo.image ? "📷 Image" : "Message")}</span>
                                             </div>
                                         )}
-                                        <div className="relative z-10 min-w-[120px]">
+
+                                        <div className="relative z-10 min-w-[120px] max-w-full">
                                             {message.image && (
                                                 <div
                                                     className="relative mb-2 rounded-lg overflow-hidden group cursor-zoom-in"
@@ -465,30 +473,22 @@ export default function Chat() {
                                             )}
 
                                             {message.audio && (
-                                                <div className="mt-1 mb-1">
+                                                <div className="mt-1 mb-2">
                                                     <AudioPlayer src={message.audio} />
                                                 </div>
                                             )}
 
                                             {message.content && (
-                                                <div className="flex flex-wrap items-end gap-x-2">
-                                                    <p className="text-sm break-words leading-relaxed max-w-full">
-                                                        {message.content}
-                                                    </p>
-                                                    <span className="text-[10px] opacity-70 ml-auto pb-0.5 select-none shrink-0">
-                                                        {formatChatTimestamp(message.timestamp)}
-                                                    </span>
-                                                </div>
+                                                <p className="text-sm break-words break-all leading-relaxed whitespace-pre-wrap">
+                                                    {message.content}
+                                                </p>
                                             )}
 
-                                            {/* Timestamp for media-only messages */}
-                                            {!message.content && (
-                                                <div className="flex justify-end mt-1">
-                                                    <span className="text-[10px] opacity-70 select-none">
-                                                        {formatChatTimestamp(message.timestamp)}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            <div className="flex justify-end mt-1 -mb-1">
+                                                <span className="text-[9px] opacity-70 select-none">
+                                                    {formatChatTimestamp(message.timestamp)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </SwipeableMessage>
@@ -511,6 +511,18 @@ export default function Chat() {
 
                     <div ref={messagesEndRef} />
                 </div>
+
+                {/* Scroll to Bottom Button */}
+                {showScrollButton && (
+                    <Button
+                        size="icon"
+                        variant="secondary"
+                        className="fixed bottom-20 right-6 rounded-full shadow-lg bg-primary/90 hover:bg-primary text-primary-foreground animate-in fade-in zoom-in duration-200 z-50"
+                        onClick={() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                    >
+                        <ArrowDown className="h-5 w-5" />
+                    </Button>
+                )}
             </div>
 
             {/* Input */}

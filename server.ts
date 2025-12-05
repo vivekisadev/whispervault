@@ -127,7 +127,18 @@ app.prepare().then(() => {
             broadcastOnlineCount();
         });
 
-        socket.on('send-message', (data: { content: string; image?: string }) => {
+        socket.on('send-message', (data: {
+            content: string;
+            image?: string;
+            audio?: string;
+            replyTo?: {
+                id: string;
+                content: string;
+                username: string;
+                audio?: string;
+                image?: string;
+            }
+        }) => {
             const userId = socket.data.userId;
             if (!userId) return;
 
@@ -141,6 +152,8 @@ app.prepare().then(() => {
                 id: generateId(),
                 content: data.content,
                 image: data.image,
+                audio: data.audio,
+                replyTo: data.replyTo,
                 timestamp: Date.now(),
                 userId: userId,
                 roomId,
