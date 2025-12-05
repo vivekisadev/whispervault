@@ -32,7 +32,18 @@ export const generateId = (): string => {
 };
 
 // Format timestamp
-export const formatTimestamp = (timestamp: number): string => {
+// Format timestamp for chat (e.g., 10:30 AM)
+export const formatChatTimestamp = (timestamp: number): string => {
+    if (!timestamp || isNaN(timestamp)) return '';
+    return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    }).format(new Date(timestamp));
+};
+
+// Format relative time for confessions (e.g., 5 mins ago)
+export const formatRelativeTime = (timestamp: number): string => {
     if (!timestamp || isNaN(timestamp)) return 'Just now';
     try {
         return formatDistanceToNow(timestamp, { addSuffix: true });
@@ -40,6 +51,9 @@ export const formatTimestamp = (timestamp: number): string => {
         return 'Just now';
     }
 };
+
+// Legacy alias if needed, or we can just replace usages
+export const formatTimestamp = formatRelativeTime;
 
 // Calculate vote score
 export const calculateVoteScore = (upvotes: number, downvotes: number): number => {

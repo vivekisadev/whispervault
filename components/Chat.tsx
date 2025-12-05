@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { ChatMessage } from '@/types';
-import { generateId, generateAnonymousName, formatTimestamp } from '@/lib/utils';
+import { generateId, generateAnonymousName, formatTimestamp, formatChatTimestamp } from '@/lib/utils';
 import { Send, UserX, Loader, Image as ImageIcon, X, Smile, Reply, Mic, Trash2, Square } from 'lucide-react';
 import SwipeableMessage from './SwipeableMessage';
 import AudioPlayer from './AudioPlayer';
+import AudioWaveform from './AudioWaveform';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,70 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
-
-const AudioVisualizer = ({ stream }: { stream: MediaStream | null }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>(0);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-
-    useEffect(() => {
-        if (!stream || !canvasRef.current) return;
-
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const analyser = audioContext.createAnalyser();
-        const source = audioContext.createMediaStreamSource(stream);
-
-        analyser.fftSize = 64; // Low FFT size for fewer bars (minimalist)
-        source.connect(analyser);
-        analyserRef.current = analyser;
-
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        const draw = () => {
-            if (!canvas) return;
-
-            animationRef.current = requestAnimationFrame(draw);
-            analyser.getByteFrequencyData(dataArray);
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let barHeight;
-            let x = 0;
-
-            // Draw bars centered vertically
-            const centerY = canvas.height / 2;
-
-            for (let i = 0; i < bufferLength; i++) {
-                barHeight = (dataArray[i] / 255) * canvas.height;
-
-                // Minimalist rounded bars
-                ctx.fillStyle = `rgba(236, 72, 153, ${Math.max(0.3, dataArray[i] / 255)})`; // Pink with opacity based on volume
-
-                // Draw rounded pill shape
-                ctx.beginPath();
-                ctx.roundRect(x, centerY - barHeight / 2, barWidth - 2, Math.max(4, barHeight), 4);
-                ctx.fill();
-
-                x += barWidth + 1;
-            }
-        };
-
-        draw();
-
-        return () => {
-            cancelAnimationFrame(animationRef.current);
-            audioContext.close();
-        };
-    }, [stream]);
-
-    return <canvas ref={canvasRef} width={200} height={40} className="w-full h-full" />;
-};
 
 export default function Chat() {
     const [socket, setSocket] = useState<Socket | null>(null);
@@ -241,9 +178,11 @@ export default function Chat() {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             setRecordingStream(stream);
 
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'audio/webm;codecs=opus'
-            });
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : 'audio/webm';
+
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
 
@@ -279,7 +218,7 @@ export default function Chat() {
                 };
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(100); // Collect chunks every 100ms
             setIsRecording(true);
             setRecordingDuration(0);
             timerRef.current = setInterval(() => {
@@ -527,8 +466,8 @@ export default function Chat() {
                                                     <AudioPlayer src={message.audio} />
                                                 </div>
                                             )}
-                                            <p className="text-xs opacity-70">
-                                                {formatTimestamp(message.timestamp)}
+                                            <p className="text-[10px] opacity-70 text-right mt-1">
+                                                {formatChatTimestamp(message.timestamp)}
                                             </p>
                                         </div>
                                     </div>
@@ -628,7 +567,7 @@ export default function Chat() {
                                 <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
                                     <div className="w-full h-[1px] bg-primary"></div>
                                 </div>
-                                <AudioVisualizer stream={recordingStream} />
+                                <AudioWaveform stream={recordingStream} isRecording={isRecording} />
                             </div>
 
                             {/* Timer */}
