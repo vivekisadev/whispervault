@@ -243,6 +243,15 @@ export default function Chat() {
                             hasReply: !!replyingTo,
                             chatUserId
                         });
+                        console.log("📋 Payload keys:", Object.keys(messagePayload));
+                        console.log("📋 Payload structure:", {
+                            content: messagePayload.content,
+                            hasAudio: !!messagePayload.audio,
+                            audioType: typeof messagePayload.audio,
+                            audioFirstChars: messagePayload.audio?.substring(0, 30),
+                            hasChatUserId: !!messagePayload.chatUserId,
+                            hasReplyTo: !!messagePayload.replyTo
+                        });
 
                         socket.emit('send-message', messagePayload);
                         console.log("✅ Audio message sent!");
