@@ -140,11 +140,11 @@ export default function Home() {
                 <div
                   className="w-8 h-8 bg-foreground group-hover:bg-primary transition-colors duration-300"
                   style={{
-                    maskImage: "url('/logo.png')",
+                    maskImage: "url('/vault-logo.svg')",
                     maskSize: "contain",
                     maskRepeat: "no-repeat",
                     maskPosition: "center",
-                    WebkitMaskImage: "url('/logo.png')",
+                    WebkitMaskImage: "url('/vault-logo.svg')",
                     WebkitMaskSize: "contain",
                     WebkitMaskRepeat: "no-repeat",
                     WebkitMaskPosition: "center",

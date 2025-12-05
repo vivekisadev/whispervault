@@ -52,13 +52,13 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
         }
     };
 
-    // Dynamic font size based on content length
+    // Dynamic font size based on content length - more conservative sizing
     const getFontSize = (contentLength: number) => {
-        if (contentLength < 50) return 'text-5xl md:text-6xl';
-        if (contentLength < 100) return 'text-4xl md:text-5xl';
-        if (contentLength < 150) return 'text-3xl md:text-4xl';
-        if (contentLength < 200) return 'text-2xl md:text-3xl';
-        return 'text-xl md:text-2xl';
+        if (contentLength < 40) return 'text-4xl md:text-5xl';
+        if (contentLength < 80) return 'text-3xl md:text-4xl';
+        if (contentLength < 120) return 'text-2xl md:text-3xl';
+        if (contentLength < 180) return 'text-xl md:text-2xl';
+        return 'text-lg md:text-xl';
     };
 
     const handleDownload = async () => {
@@ -136,39 +136,46 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                 <div className="space-y-6">
                     <div ref={captureRef} className="w-full aspect-[4/5] relative flex flex-col overflow-hidden shadow-2xl transition-all duration-500">
 
-                        {/* Mix Theme - Modern Glassmorphic */}
+                        {/* Mix Theme - Vibrant & Uplifting */}
                         {theme === 'mix' && (
-                            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#F0F4F8] via-[#E8EBF7] to-[#F0F4F8] flex flex-col items-center justify-between p-12 text-center overflow-hidden">
-                                {/* Glassmorphic background elements */}
-                                <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-violet-400/30 to-blue-400/30 rounded-full blur-3xl" />
-                                <div className="absolute bottom-0 right-0 w-80 h-80 bg-gradient-to-tl from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl" />
-                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-cyan-300/20 to-blue-300/20 rounded-full blur-2xl" />
+                            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex flex-col items-center justify-between p-10 text-center overflow-hidden">
+                                {/* Playful floating elements */}
+                                <div className="absolute top-10 right-10 text-4xl animate-bounce" style={{ animationDuration: '2s' }}>✨</div>
+                                <div className="absolute bottom-20 left-10 text-3xl animate-bounce" style={{ animationDuration: '3s', animationDelay: '0.5s' }}>💫</div>
+                                <div className="absolute top-1/3 left-1/4 text-2xl animate-pulse">⭐</div>
+                                <div className="absolute bottom-1/3 right-1/4 text-2xl animate-pulse" style={{ animationDelay: '1s' }}>🌟</div>
 
-                                {/* Header */}
-                                <div className="relative z-10 w-full flex justify-between items-center">
-                                    <span className="text-xs font-sans text-slate-600 tracking-wider uppercase">Whisper Vault</span>
-                                    <div className="w-8 h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/60 flex items-center justify-center shadow-lg">
-                                        <span className="text-slate-700 text-sm">→</span>
+                                {/* Gradient orbs */}
+                                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-pink-300/30 via-purple-300/30 to-transparent rounded-full blur-3xl" />
+                                <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-blue-300/30 via-indigo-300/30 to-transparent rounded-full blur-3xl" />
+
+                                {/* Header with gradient */}
+                                <div className="relative z-10 w-full">
+                                    <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/70 backdrop-blur-md rounded-full border-2 border-purple-200/60 shadow-lg">
+                                        <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-full p-1.5 flex items-center justify-center shadow-md">
+                                            <Logo size={13} />
+                                        </div>
+                                        <span className="text-xs font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent tracking-wide uppercase">Whisper Vault</span>
                                     </div>
                                 </div>
 
-                                {/* Main content - Glassmorphic card */}
-                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-full px-4">
-                                    <div className="bg-white/40 backdrop-blur-xl border border-white/60 rounded-3xl p-8 shadow-2xl">
-                                        <div style={{ fontFamily: '"Outfit", sans-serif' }} className="leading-tight">
-                                            <p className={`${getFontSize(confession.content.length)} font-semibold bg-gradient-to-br from-slate-800 to-slate-600 bg-clip-text text-transparent`}>
+                                {/* Main content with colorful accent */}
+                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-full px-6">
+                                    <div className="bg-white/60 backdrop-blur-md rounded-3xl p-8 border-2 border-purple-100/60 shadow-xl">
+                                        <div style={{ fontFamily: '"Outfit", sans-serif' }} className="leading-relaxed">
+                                            <p className={`${getFontSize(confession.content.length)} font-semibold bg-gradient-to-r from-purple-700 via-pink-600 to-purple-700 bg-clip-text text-transparent mb-6`}>
                                                 {confession.content}
                                             </p>
                                             {reply && (
-                                                <div className="mt-6 pt-6 border-t border-slate-300/50">
-                                                    <p className="text-lg md:text-xl text-slate-600 italic">{reply.content}</p>
+                                                <div className="mt-6 pt-6 border-t-2 border-purple-200/60">
+                                                    <p className="text-base md:text-lg text-purple-600 italic font-medium">{reply.content}</p>
                                                 </div>
                                             )}
                                         </div>
                                         {confession.tags && confession.tags.length > 0 && (
                                             <div className="mt-6 flex flex-wrap justify-center gap-2">
                                                 {confession.tags.map(tag => (
-                                                    <span key={tag} className="px-3 py-1 text-xs font-medium text-slate-600 bg-white/50 backdrop-blur-sm rounded-full border border-white/60">
+                                                    <span key={tag} className="px-3 py-1.5 text-xs font-semibold text-purple-600 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full border border-purple-200 shadow-sm">
                                                         #{tag}
                                                     </span>
                                                 ))}
@@ -177,63 +184,79 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                                     </div>
                                 </div>
 
-                                {/* Footer with Logo */}
-                                <div className="relative z-10 w-full">
-                                    <div className="flex items-center justify-center gap-2 bg-white/30 backdrop-blur-md rounded-full px-4 py-2 border border-white/60 inline-flex mx-auto shadow-lg">
-                                        <Logo size={16} color="#475569" />
-                                        <span className="text-xs font-medium text-slate-600 tracking-wide">@whispervault</span>
-                                    </div>
+                                {/* Footer with heart */}
+                                <div className="relative z-10 text-xs text-purple-400/60 font-medium">
+                                    Made with 💜
                                 </div>
                             </div>
                         )}
 
-                        {/* Code Theme - unchanged */}
+                        {/* Code Theme - Cyber Matrix */}
                         {theme === 'code' && (
                             <>
-                                <div className="absolute inset-0 w-full h-full bg-[#0a0a0a]">
-                                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(120,119,198,0.3),transparent_50%)]" />
-                                    <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_100%_100%,rgba(74,58,255,0.2),transparent_50%)]" />
-                                    <div className="absolute top-[30%] left-[-20%] w-[60%] h-[60%] bg-fuchsia-500/10 blur-[100px] rounded-full" />
-                                    <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/10 blur-[80px] rounded-full" />
-                                    <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] brightness-100 contrast-150 mix-blend-overlay" />
+                                <div className="absolute inset-0 w-full h-full bg-black">
+                                    {/* Matrix-style background */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-emerald-950/50 via-black to-emerald-950/30" />
+                                    <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, #10b981 3px, #10b981 4px)', backgroundSize: '100% 4px' }} />
+
+                                    {/* Glowing grid */}
+                                    <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', backgroundSize: '50px 50px' }} />
+
+                                    {/* Glow effects */}
+                                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-full h-40 bg-emerald-500/10 blur-3xl" />
+                                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-full h-40 bg-cyan-500/10 blur-3xl" />
                                 </div>
-                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-6 sm:p-8">
-                                    <div className="w-full bg-white/5 backdrop-blur-xl border border-white/20 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black/5">
-                                        <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-sm" />
-                                                <div className="w-3 h-3 rounded-full bg-[#ffbd2e] shadow-sm" />
-                                                <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-sm" />
+
+                                <div className="relative z-10 flex-1 flex flex-col p-8">
+                                    {/* Futuristic header */}
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b border-emerald-500/20">
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" />
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" style={{ animationDelay: '0.2s' }} />
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-lg shadow-emerald-500/50" style={{ animationDelay: '0.4s' }} />
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-white/60 font-medium font-mono">
-                                                <Terminal className="w-3 h-3" />
-                                                <span>confession.ts</span>
-                                            </div>
-                                            <div className="w-10" />
+                                            <span className="text-xs text-emerald-400 font-mono">~/terminal</span>
                                         </div>
-                                        <div className="p-5 font-mono text-sm leading-relaxed relative group">
-                                            <div className=" flex gap-4">
-                                                <div className="flex flex-col text-right select-none text-white/30 text-xs pt-[2px] min-w-[1.5rem]">
-                                                    {getLineNumbers().map(n => (<span key={n} className="leading-relaxed">{n}</span>))}
-                                                </div>
-                                                <div className="flex-1 text-gray-200">
-                                                    <div className="text-purple-300 mb-1">const <span className="text-blue-300">confession</span> = <span className="text-yellow-300">{'{'}</span></div>
-                                                    <div className="pl-4"><span className="text-blue-300">id</span>: <span className="text-orange-300">"{confession.id.slice(0, 8)}"</span>,</div>
-                                                    <div className="pl-4"><span className="text-blue-300">content</span>: <span className="text-green-300">"{confession.content}"</span>,</div>
-                                                    <div className="pl-4"><span className="text-blue-300">tags</span>: [<span className="text-orange-300">{confession.tags?.map(t => `"#${t}"`).join(', ')}</span>],</div>
-                                                    <div className="pl-4 mb-1"><span className="text-blue-300">likes</span>: <span className="text-purple-300">{confession.upvotes}</span>,</div>
-                                                    {reply && (<><div className="pl-4 mt-2 text-gray-400 italic">// Top Reply</div><div className="pl-4"><span className="text-blue-300">reply</span>: <span className="text-green-300">"{reply.content}"</span>,</div></>)}
-                                                    <div className="text-yellow-300">{'}'}</div>
-                                                    <div className="mt-2 text-gray-400 animate-pulse">_</div>
-                                                </div>
+                                        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-500/10 rounded border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+                                            <div className="bg-emerald-500 rounded-full p-1 shadow-md shadow-emerald-500/50">
+                                                <Logo size={11} />
                                             </div>
+                                            <span className="text-xs text-emerald-400 font-mono font-bold tracking-wider">WHISPER_VAULT</span>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="relative z-10 p-6 pb-8 text-center">
-                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-md border border-white/10">
-                                        <Logo size={16} color="#FFFFFF" />
-                                        <span className="text-xs font-bold text-white/80 tracking-widest uppercase">Whisper Vault</span>
+
+                                    {/* Cyber terminal content */}
+                                    <div className="font-mono text-sm leading-loose flex-1 flex flex-col justify-center px-4">
+                                        <div className="text-emerald-400 mb-3 flex items-center gap-2">
+                                            <span className="text-cyan-400">❯</span>
+                                            <span>const confession = {'{'}</span>
+                                        </div>
+                                        <div className="pl-8 text-gray-300 space-y-1">
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-cyan-400">content:</span>
+                                                <span className="text-emerald-300 flex-1">"{confession.content}"</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-cyan-400">tags:</span>
+                                                <span className="text-yellow-300">[{confession.tags?.map(t => `"${t}"`).join(', ')}]</span>
+                                            </div>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-cyan-400">engagement:</span>
+                                                <span className="text-pink-400">{confession.upvotes} likes</span>
+                                            </div>
+                                            {reply && (
+                                                <div className="mt-3 flex items-start gap-2 border-l-2 border-emerald-500/30 pl-3">
+                                                    <span className="text-cyan-400">reply:</span>
+                                                    <span className="text-emerald-300">"{reply.content}"</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="text-emerald-400 mt-3">{'}'}</div>
+                                        <div className="text-emerald-500 mt-4 flex items-center gap-1 animate-pulse">
+                                            <span>▊</span>
+                                            <span className="text-xs text-emerald-500/50">awaiting input...</span>
+                                        </div>
                                     </div>
                                 </div>
                             </>
@@ -263,7 +286,7 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                                     )}
                                 </div>
                                 <div className="absolute bottom-8 left-0 right-0 text-center">
-                                    <div className="inline-flex items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-pink-100/40 backdrop-blur-md rounded-full border border-pink-200/60 shadow-lg">
                                         <Logo size={16} color="#C0392B" />
                                         <span className="text-sm font-bold text-[#C0392B] tracking-widest uppercase">Whisper Vault</span>
                                     </div>
@@ -294,7 +317,7 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                                     )}
                                 </div>
                                 <div className="absolute bottom-8 left-0 right-0 text-center">
-                                    <div className="inline-flex items-center gap-2">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100/30 backdrop-blur-md rounded-full border border-red-200/50 shadow-lg">
                                         <Logo size={16} color="#8B0000" />
                                         <span className="text-xs font-bold text-red-800/60 tracking-widest uppercase font-sans">Whisper Vault</span>
                                     </div>
@@ -316,7 +339,10 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
 
                                 {/* Header */}
                                 <div className="relative z-10 w-full">
-                                    <span className="text-xs font-sans text-slate-500/80 tracking-widest uppercase">Whisper Vault</span>
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/25 backdrop-blur-md rounded-full border border-white/50 shadow-lg">
+                                        <Logo size={16} color="#64748B" />
+                                        <span className="text-xs font-sans text-slate-500/80 tracking-widest uppercase font-semibold">Whisper Vault</span>
+                                    </div>
                                 </div>
 
                                 {/* Main content - Glassmorphic card */}
@@ -343,14 +369,6 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                                         )}
                                     </div>
                                 </div>
-
-                                {/* Footer with Logo */}
-                                <div className="relative z-10 w-full">
-                                    <div className="flex items-center justify-center gap-2 bg-white/25 backdrop-blur-md rounded-full px-4 py-2 border border-white/50 inline-flex mx-auto shadow-lg">
-                                        <Logo size={14} color="#64748B" />
-                                        <span className="text-xs font-medium text-slate-600 tracking-wide">@whispervault</span>
-                                    </div>
-                                </div>
                             </div>
                         )}
 
@@ -372,61 +390,84 @@ export default function ShareModal({ confession, reply, onClose }: ShareModalPro
                                     )}
                                 </div>
                                 <div className="absolute bottom-6 left-0 right-0 text-center">
-                                    <div className="inline-flex items-center gap-2 bg-black text-[#FFD700] px-4 py-1 font-bold text-sm uppercase tracking-wider transform -rotate-1 shadow-[4px_4px_0px_rgba(255,255,255,1)]">
-                                        <Logo size={16} color="#FFD700" />
+                                    <div className="inline-flex items-center gap-2 bg-black text-[#FFD700] px-4 py-2 font-bold text-sm uppercase tracking-wider transform -rotate-1 shadow-[4px_4px_0px_rgba(255,255,255,1)] rounded-md">
+                                        <div className="bg-white rounded-full p-1 flex items-center justify-center">
+                                            <Logo size={14} />
+                                        </div>
                                         <span>Whisper Vault</span>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Dark Theme - Redesigned Modern Glassmorphic */}
+                        {/* Dark Theme - Cosmic Mystery */}
                         {theme === 'dark' && (
-                            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#0F0F1E] via-[#1A1A2E] to-[#0F0F1E] flex flex-col items-center justify-between p-12 text-center overflow-hidden">
-                                {/* Glassmorphic background elements */}
-                                <div className="absolute inset-0 opacity-30 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-                                <div className="absolute top-0 left-0 w-80 h-80 bg-gradient-to-br from-purple-600/20 to-blue-600/20 rounded-full blur-3xl" />
-                                <div className="absolute bottom-0 right-0 w-72 h-72 bg-gradient-to-tl from-indigo-600/20 to-purple-600/20 rounded-full blur-3xl" />
-
-                                {/* Spotlight effect */}
-                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-32 bg-violet-400/20 blur-2xl" />
-
-                                {/* Header */}
-                                <div className="relative z-10 w-full">
-                                    <span className="text-xs font-sans text-violet-300/50 tracking-widest uppercase">Whisper Vault</span>
+                            <div className="absolute inset-0 w-full h-full bg-black flex flex-col items-center justify-between p-10 text-center overflow-hidden">
+                                {/* Starry background */}
+                                <div className="absolute inset-0">
+                                    <div className="absolute top-10 left-10 w-1 h-1 bg-white rounded-full animate-pulse" />
+                                    <div className="absolute top-20 right-20 w-1 h-1 bg-purple-300 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+                                    <div className="absolute top-1/3 left-1/4 w-1 h-1 bg-blue-300 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+                                    <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-purple-200 rounded-full animate-pulse" style={{ animationDelay: '1.5s' }} />
+                                    <div className="absolute bottom-20 left-1/3 w-1 h-1 bg-white rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+                                    <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-blue-200 rounded-full animate-pulse" style={{ animationDelay: '0.8s' }} />
                                 </div>
 
-                                {/* Main content - Glassmorphic card */}
-                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-full px-4">
-                                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-                                        <div style={{ fontFamily: '"Outfit", sans-serif' }} className="leading-tight">
-                                            <p className={`${getFontSize(confession.content.length)} font-light text-violet-100`}>
-                                                {confession.content}
-                                            </p>
-                                            {reply && (
-                                                <div className="mt-6 pt-6 border-t border-violet-400/20">
-                                                    <p className="text-base md:text-lg text-violet-200/80 italic">{reply.content}</p>
-                                                </div>
-                                            )}
+                                {/* Cosmic glow */}
+                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+                                <div className="absolute top-0 left-0 w-64 h-64 bg-blue-600/5 rounded-full blur-3xl" />
+                                <div className="absolute bottom-0 right-0 w-64 h-64 bg-violet-600/5 rounded-full blur-3xl" />
+
+                                {/* Mystical header */}
+                                <div className="relative z-10 w-full">
+                                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-md rounded-full border border-purple-500/20 shadow-2xl shadow-purple-500/10">
+                                        <div className="bg-gradient-to-r from-purple-500 to-violet-600 rounded-full p-1.5 shadow-lg shadow-purple-500/30">
+                                            <Logo size={12} />
                                         </div>
-                                        {confession.tags && confession.tags.length > 0 && (
-                                            <div className="mt-6 flex flex-wrap justify-center gap-2">
-                                                {confession.tags.map(tag => (
-                                                    <span key={tag} className="px-3 py-1 text-xs font-medium text-violet-300/70 bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
-                                                        #{tag}
-                                                    </span>
-                                                ))}
+                                        <span className="text-xs font-medium bg-gradient-to-r from-purple-300 to-violet-300 bg-clip-text text-transparent tracking-widest uppercase">Whisper Vault</span>
+                                    </div>
+                                </div>
+
+                                {/* Mysterious content */}
+                                <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-full px-6">
+                                    {/* Quote mark */}
+                                    <div className="text-6xl text-purple-500/20 font-serif mb-4">"</div>
+
+                                    <div style={{ fontFamily: '"Playfair Display", serif' }} className="leading-relaxed">
+                                        <p className={`${getFontSize(confession.content.length)} font-light italic text-white mb-4`}>
+                                            {confession.content}
+                                        </p>
+                                        {reply && (
+                                            <div className="mt-8">
+                                                <div className="flex items-center justify-center gap-3 mb-4">
+                                                    <div className="w-8 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+                                                    <div className="w-1 h-1 bg-purple-400 rounded-full" />
+                                                    <div className="w-8 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+                                                </div>
+                                                <p className="text-base md:text-lg text-purple-200/80 italic font-light">{reply.content}</p>
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Quote mark */}
+                                    <div className="text-6xl text-purple-500/20 font-serif mt-4 self-end">"</div>
+
+                                    {confession.tags && confession.tags.length > 0 && (
+                                        <div className="mt-8 flex flex-wrap justify-center gap-2">
+                                            {confession.tags.map(tag => (
+                                                <span key={tag} className="px-3 py-1 text-xs font-medium text-purple-300/60 bg-purple-500/10 backdrop-blur-sm rounded-full border border-purple-500/20">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Footer with Logo */}
-                                <div className="relative z-10 w-full">
-                                    <div className="flex items-center justify-center gap-2 bg-white/5 backdrop-blur-md rounded-full px-4 py-2 border border-white/10 inline-flex mx-auto shadow-lg">
-                                        <Logo size={14} color="#A78BFA" />
-                                        <span className="text-xs font-medium text-violet-300/80 tracking-wide">@whispervault</span>
-                                    </div>
+                                {/* Footer constellation */}
+                                <div className="relative z-10 flex items-center gap-2">
+                                    <div className="w-1 h-1 bg-purple-400 rounded-full" />
+                                    <div className="w-1 h-1 bg-purple-300 rounded-full" />
+                                    <div className="w-1 h-1 bg-purple-400 rounded-full" />
                                 </div>
                             </div>
                         )}

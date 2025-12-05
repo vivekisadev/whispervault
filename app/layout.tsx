@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     maximumScale: 1,
   },
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/vault-logo.svg",
+    shortcut: "/vault-logo.svg",
+    apple: "/vault-logo.svg",
   },
 };
 
