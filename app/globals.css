@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  /* Light Theme */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+  --primary: hsl(326 100% 60%);
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(0 0% 96.1%);
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96.1%);
+  --muted-foreground: hsl(0 0% 45.1%);
+  --accent: hsl(0 0% 96.1%);
+  --accent-foreground: hsl(0 0% 9%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 89.8%);
+  --input: hsl(0 0% 89.8%);
+  --ring: hsl(326 100% 60%);
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* IIWIARS Inspired Dark Theme */
+  --background: hsl(0 0% 5%);
+  --foreground: hsl(0 0% 98%);
+  --card: hsl(0 0% 10%);
+  --card-foreground: hsl(0 0% 98%);
+  --popover: hsl(0 0% 10%);
+  --popover-foreground: hsl(0 0% 98%);
+  --primary: hsl(326 100% 60%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(0 0% 15%);
+  --secondary-foreground: hsl(0 0% 98%);
+  --muted: hsl(0 0% 15%);
+  --muted-foreground: hsl(0 0% 63.9%);
+  --accent: hsl(326 100% 60%);
+  --accent-foreground: hsl(0 0% 100%);
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 20%);
+  --input: hsl(0 0% 20%);
+  --ring: hsl(326 100% 60%);
+}
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+
+  /* Swing Animation for Hanging Tag */
+  @keyframes swing {
+
+    0%,
+    100% {
+      transform: rotate(0deg);
+    }
+
+    25% {
+      transform: rotate(2deg);
+    }
+
+    75% {
+      transform: rotate(-2deg);
+    }
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(0);
+      opacity: 0.6;
+    }
+
+    100% {
+      transform: translateY(300px);
+      opacity: 0;
+    }
+  }
+}
